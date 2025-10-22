@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import OllamaStatus from '../components/OllamaStatus';
 import './App.css';
 
 function App() {
@@ -45,7 +46,9 @@ function App() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <OllamaStatus />
+
+        <div className="bg-white rounded-lg shadow-md p-6 mt-4">
           <h2 className="text-xl font-semibold mb-4">File Upload</h2>
           <p className="text-gray-600">File upload functionality coming soon...</p>
         </div>
