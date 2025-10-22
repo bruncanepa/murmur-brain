@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+release/
+*.log
+
+# Electron
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ollama models (large files)
+resources/ollama/
+models/
+
+# User data
+userData/
+
+# Python (if any Python tooling is used)
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.Python
+
+# SQLite databases (user data)
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
