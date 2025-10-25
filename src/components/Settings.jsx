@@ -1,5 +1,4 @@
 import ModelManager from "./ModelManager";
-import OllamaStatus from "./OllamaStatus";
 import { useTheme } from "../contexts/ThemeContext";
 
 function Settings() {
@@ -41,19 +40,9 @@ function Settings() {
               </p>
             </div>
           </div>
-          <OllamaStatus />
         </div>
       </div>
 
-      {/* Model Management Section */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 px-1">
-          Model Management
-        </h2>
-        <ModelManager />
-      </div>
-
-      {/* Application Settings */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 px-1">
           Application Settings
@@ -119,6 +108,16 @@ function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Model Management Section */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 px-1">
+          Model Management
+        </h2>
+        <ModelManager />
+      </div>
+
+      {/* Application Settings */}
     </div>
   );
 }

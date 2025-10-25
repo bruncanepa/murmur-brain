@@ -174,7 +174,7 @@ function FileUpload() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden animate-fade-in">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden animate-fade-in">
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center mb-6">
@@ -184,8 +184,8 @@ function FileUpload() {
             </svg>
           </div>
           <div className="ml-4">
-            <h2 className="text-xl font-bold text-gray-900">Upload Documents</h2>
-            <p className="text-sm text-gray-500">Add files to your knowledge base</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Upload Documents</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Add files to your knowledge base</p>
           </div>
         </div>
 
@@ -193,8 +193,8 @@ function FileUpload() {
         <div
           className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
             dragActive
-              ? 'border-primary-500 bg-primary-50 scale-[1.02]'
-              : 'border-gray-300 hover:border-primary-400 hover:bg-gray-50'
+              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-[1.02]'
+              : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700'
           }`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
@@ -214,26 +214,26 @@ function FileUpload() {
           />
 
           <div className="space-y-4">
-            <div className="w-16 h-16 mx-auto bg-primary-100 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
               {uploading ? (
                 <div className="animate-spin">
-                  <svg className="w-8 h-8 text-primary-600" fill="none" viewBox="0 0 24 24">
+                  <svg className="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                 </div>
               ) : (
-                <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-8 h-8 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
               )}
             </div>
             <div>
-              <p className="text-base font-medium text-gray-900 mb-1">
+              <p className="text-base font-medium text-gray-900 dark:text-gray-100 mb-1">
                 {uploading ? 'Processing files...' : 'Drop files here or click to browse'}
               </p>
-              <p className="text-sm text-gray-500">
-                Supported: <span className="font-semibold text-gray-700">PDF, CSV, TXT</span> • Max 50MB per file
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Supported: <span className="font-semibold text-gray-700 dark:text-gray-300">PDF, CSV, TXT</span> • Max 50MB per file
               </p>
             </div>
 
@@ -291,15 +291,15 @@ function FileUpload() {
         {files.length > 0 && (
           <div className="mt-6 animate-slide-up">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Processed Files
-                <span className="ml-2 inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                <span className="ml-2 inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300">
                   {files.length}
                 </span>
               </h3>
               <button
                 onClick={handleClearAll}
-                className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 font-medium transition-colors"
               >
                 Clear All
               </button>
@@ -331,30 +331,30 @@ function FileUpload() {
                     </div>
 
                     <div className="ml-4 flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{file.name}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{file.name}</p>
 
                       {file.status === 'success' ? (
                         <div className="mt-1 space-y-1">
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
                             {file.type} • {file.size} MB • {file.chunks} chunks
                           </p>
                           {file.characters && (
-                            <p className="text-xs text-gray-600">
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
                               {file.characters.toLocaleString()} characters • {file.words.toLocaleString()} words
                             </p>
                           )}
                           {file.documentId && (
-                            <p className="text-xs text-gray-500 font-mono">ID: {file.documentId.substring(0, 8)}...</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 font-mono">ID: {file.documentId.substring(0, 8)}...</p>
                           )}
                         </div>
                       ) : (
-                        <p className="mt-1 text-sm text-error-600 font-medium">{file.error}</p>
+                        <p className="mt-1 text-sm text-error-600 dark:text-error-400 font-medium">{file.error}</p>
                       )}
                     </div>
 
                     <button
                       onClick={() => handleRemoveFile(index)}
-                      className="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="ml-4 flex-shrink-0 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -371,10 +371,10 @@ function FileUpload() {
         {files.length > 0 && documents.length > 0 && (
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
+              <div className="w-full border-t border-gray-200 dark:border-gray-700" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-white text-sm font-medium text-gray-500">Your Documents</span>
+              <span className="px-3 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400">Your Documents</span>
             </div>
           </div>
         )}
@@ -382,16 +382,16 @@ function FileUpload() {
         {/* Documents List from Database */}
         <div className={files.length > 0 ? 'mt-6' : 'mt-0'}>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Uploaded Documents
-              <span className="ml-2 inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+              <span className="ml-2 inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300">
                 {documents.length}
               </span>
             </h3>
             {documents.length > 0 && (
               <button
                 onClick={loadDocuments}
-                className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors flex items-center gap-1"
+                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 font-medium transition-colors flex items-center gap-1"
                 title="Refresh list"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -403,37 +403,37 @@ function FileUpload() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+            <div className="flex justify-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="w-12 h-12 border-4 border-primary-200 dark:border-primary-900 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin" />
             </div>
           ) : documents.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
+              <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
-              <p className="text-gray-600 font-medium">No documents uploaded yet</p>
-              <p className="text-sm text-gray-500 mt-1">Upload your first document to get started</p>
+              <p className="text-gray-600 dark:text-gray-400 font-medium">No documents uploaded yet</p>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Upload your first document to get started</p>
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
               {documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="relative p-4 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:shadow-md transition-all duration-200"
+                  className="relative p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex items-start">
-                    <div className="flex-shrink-0 w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
 
                     <div className="ml-4 flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                         {doc.file_name || doc.fileName || 'Unknown'}
                       </p>
                       <div className="mt-1 space-y-1">
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
                           {doc.file_type || doc.fileType || 'N/A'} • {
                             (() => {
                               const size = doc.file_size || doc.fileSize;
@@ -444,17 +444,17 @@ function FileUpload() {
                             })()
                           } MB • {doc.chunk_count || doc.chunkCount || 0} chunks
                         </p>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
                           Status: <span className={`font-medium ${
-                            doc.status === 'completed' ? 'text-success-600' :
-                            doc.status === 'processing' ? 'text-warning-600' :
-                            'text-error-600'
+                            doc.status === 'completed' ? 'text-success-600 dark:text-success-400' :
+                            doc.status === 'processing' ? 'text-warning-600 dark:text-warning-400' :
+                            'text-error-600 dark:text-error-400'
                           }`}>
                             {doc.status || 'unknown'}
                           </span>
                         </p>
                         {(doc.upload_date || doc.uploadedAt) && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
                             Uploaded: {
                               (() => {
                                 const dateStr = doc.upload_date || doc.uploadedAt;
@@ -465,13 +465,13 @@ function FileUpload() {
                             }
                           </p>
                         )}
-                        <p className="text-xs text-gray-400 font-mono">ID: {doc.id}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">ID: {doc.id}</p>
                       </div>
                     </div>
 
                     <button
                       onClick={() => handleDeleteDocument(doc.id, doc.file_name || doc.fileName || 'this document')}
-                      className="ml-4 flex-shrink-0 p-2 text-gray-400 hover:text-error-600 hover:bg-error-50 rounded-lg transition-colors"
+                      className="ml-4 flex-shrink-0 p-2 text-gray-400 dark:text-gray-500 hover:text-error-600 dark:hover:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-lg transition-colors"
                       title="Delete document"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

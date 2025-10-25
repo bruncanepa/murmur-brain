@@ -330,8 +330,8 @@ function Chat({ chatId, allDocuments, onMessageSent }) {
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
             </div>
             <div className="max-w-2xl">
-              <div className="p-4 bg-gray-100 rounded-lg">
-                <p className="text-gray-500 text-sm">Thinking...</p>
+              <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Thinking...</p>
               </div>
             </div>
           </div>
