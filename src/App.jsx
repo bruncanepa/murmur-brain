@@ -9,12 +9,12 @@ import "./App.css";
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-100 flex">
+      <div className="h-screen bg-gray-100 flex overflow-hidden">
         {/* Sidebar */}
         <Sidebar />
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto h-screen">
           <Routes>
             <Route path="/documents" element={<UploadPage />} />
             <Route path="/search" element={<SearchPage />} />

@@ -46,7 +46,7 @@ function Sidebar() {
 
   return (
     <aside
-      className={`bg-white border-r border-gray-200 shadow-sm transition-all duration-300 flex flex-col ${
+      className={`h-screen bg-white border-r border-gray-200 shadow-sm transition-all duration-300 flex flex-col ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
@@ -68,7 +68,7 @@ function Sidebar() {
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-2">
         {navigationItems.map((item) => (
           <NavLink
             key={item.to}
