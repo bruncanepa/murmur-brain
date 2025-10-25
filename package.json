@@ -4,13 +4,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "cd server && python3 main.py",
+    "dev:server": "cd server && uvicorn main:app --reload --host 127.0.0.1 --port 8000",
+    "dev:all": "concurrently \"pnpm dev\" \"pnpm dev:server\" -n \"frontend,backend\" -c \"cyan,yellow\"",
     "build": "vite build",
     "preview": "vite preview",
     "start": "cd server && python3 main.py"
   },
   "keywords": [
-    "pwa",
+    "local-brain",
+    "second-brain",
     "rag",
     "ollama",
     "ai"
@@ -21,6 +23,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18",
     "vite": "^7.1.11"
