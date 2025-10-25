@@ -44,7 +44,7 @@ class ChatService:
         Args:
             query: User's question
             chat_id: Chat ID to filter documents
-            top_k: Number of chunks to retrieve
+            top_k: Number of chunks to return (default: 5)
 
         Returns:
             Tuple of (formatted_context_string, sources_list)
@@ -56,26 +56,41 @@ class ChatService:
 
         doc_ids = [doc["id"] for doc in docs_result["documents"]]
 
-        # Perform vector search within these documents
+        # Retrieve top-10 candidates with higher threshold
         search_result = self.vector_search.search(
             query=query,
-            top_k=top_k,
-            threshold=0.3,  # Minimum relevance threshold
+            top_k=10,  # Retrieve more candidates
+            threshold=0.5,  # Higher threshold for better quality
             doc_ids=doc_ids
         )
 
         if not search_result["success"] or not search_result["results"]:
             return "", []
 
+        # Re-rank and select top-k results
+        # Sort by similarity score (already sorted, but ensure it)
+        results = sorted(search_result["results"], key=lambda x: x["similarity"], reverse=True)
+
+        # Take only top_k after re-ranking
+        top_results = results[:top_k]
+
+        if not top_results:
+            return "", []
+
         # Build context string and sources list
         context_parts = []
         sources = []
 
-        for idx, result in enumerate(search_result["results"], 1):
-            # Add to context
+        for idx, result in enumerate(top_results, 1):
+            # Add to context with metadata
             doc_name = result["document"]["file_name"]
             chunk_text = result["chunk_text"]
-            context_parts.append(f"[Source {idx}: {doc_name}]\n{chunk_text}\n")
+            similarity = result["similarity"]
+
+            # Enhanced context format with metadata
+            context_parts.append(
+                f"[Source {idx}: {doc_name} (Relevance: {similarity:.1%})]\n{chunk_text}\n"
+            )
 
             # Track source for citation
             sources.append({
@@ -88,6 +103,11 @@ class ChatService:
             })
 
         context_string = "\n".join(context_parts)
+
+        # Log retrieval quality
+        avg_similarity = sum(r["similarity"] for r in top_results) / len(top_results)
+        print(f"RAG Context: Retrieved {len(top_results)} chunks, avg similarity: {avg_similarity:.2%}")
+
         return context_string, sources
 
     def build_prompt(self, context: str, user_message: str, conversation_history: List[Dict]) -> List[Dict]:
@@ -105,19 +125,27 @@ class ChatService:
         messages = []
 
         # System message with instructions
-        system_prompt = """You are a helpful AI assistant that answers questions based on provided document context.
+        system_prompt = """You are a knowledgeable AI assistant specializing in answering questions based on provided document context.
 
-Your task:
-1. Carefully read the context from the user's documents
-2. Answer the question using ONLY information from the provided context
-3. If the context doesn't contain enough information to answer, say so
-4. Be concise and accurate
-5. Cite which sources you used when relevant
+INSTRUCTIONS:
+1. **Analyze the Context**: Carefully read all provided source materials with their relevance scores
+2. **Answer Accuracy**: Base your answer STRICTLY on the provided context - do not add external knowledge
+3. **Handle Uncertainty**: If the context lacks sufficient information, explicitly state: "Based on the provided documents, I don't have enough information to answer this fully"
+4. **Cite Sources**: Reference specific sources (e.g., "According to Source 1...") when making claims
+5. **Synthesize Information**: If multiple sources discuss the topic, synthesize them into a coherent answer
+6. **Identify Conflicts**: If sources contradict each other, acknowledge this: "Source 1 suggests X, while Source 2 indicates Y"
 
-Important:
-- Do not make up information not in the context
-- If multiple sources conflict, mention the discrepancy
-- Keep responses clear and well-formatted"""
+RESPONSE FORMAT:
+- Start with a direct answer to the question
+- Support claims with specific source citations
+- Use clear, structured formatting (bullet points, paragraphs as appropriate)
+- Be concise but complete - avoid unnecessary elaboration
+
+QUALITY STANDARDS:
+- Prioritize information from higher relevance sources
+- Distinguish between facts from the documents and your interpretation
+- If asked about something not in the context, state this clearly
+- Maintain professional, informative tone"""
 
         messages.append({
             "role": "system",
