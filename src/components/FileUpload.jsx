@@ -1,12 +1,49 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import apiService from '../utils/api';
 
 function FileUpload() {
   const [files, setFiles] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [loading, setLoading] = useState(true);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  const loadDocuments = async () => {
+    try {
+      setLoading(true);
+      const result = await apiService.getDocuments();
+      if (result.success) {
+        setDocuments(result.documents || []);
+      }
+    } catch (error) {
+      console.error('Error loading documents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (docId, docName) => {
+    if (!confirm(`Are you sure you want to delete "${docName}"?`)) {
+      return;
+    }
+
+    try {
+      const result = await apiService.deleteDocument(docId);
+      if (result.success) {
+        await loadDocuments();
+      } else {
+        alert(`Delete failed: ${result.error}`);
+      }
+    } catch (error) {
+      alert(`Delete failed: ${error.message}`);
+    }
+  };
 
   const handleFileSelect = (event) => {
     const selectedFiles = Array.from(event.target.files || []);
@@ -77,6 +114,8 @@ function FileUpload() {
             words: result.metadata.wordCount,
             documentId: result.documentId,
           });
+          // Reload documents list after successful upload
+          await loadDocuments();
         } else {
           addFileResult({
             name: file.name,
@@ -284,6 +323,124 @@ function FileUpload() {
             </div>
           </div>
         )}
+
+        {/* Divider */}
+        {files.length > 0 && documents.length > 0 && (
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="px-3 bg-white text-sm font-medium text-gray-500">Your Documents</span>
+            </div>
+          </div>
+        )}
+
+        {/* Documents List from Database */}
+        <div className={files.length > 0 ? 'mt-6' : 'mt-0'}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Uploaded Documents
+              <span className="ml-2 inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                {documents.length}
+              </span>
+            </h3>
+            {documents.length > 0 && (
+              <button
+                onClick={loadDocuments}
+                className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors flex items-center gap-1"
+                title="Refresh list"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+            </div>
+          ) : documents.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <p className="text-gray-600 font-medium">No documents uploaded yet</p>
+              <p className="text-sm text-gray-500 mt-1">Upload your first document to get started</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="relative p-4 rounded-lg border border-gray-200 bg-white hover:border-primary-300 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+
+                    <div className="ml-4 flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {doc.file_name || doc.fileName || 'Unknown'}
+                      </p>
+                      <div className="mt-1 space-y-1">
+                        <p className="text-xs text-gray-600">
+                          {doc.file_type || doc.fileType || 'N/A'} • {
+                            (() => {
+                              const size = doc.file_size || doc.fileSize;
+                              if (size && !isNaN(size)) {
+                                return (size / (1024 * 1024)).toFixed(2);
+                              }
+                              return '0.00';
+                            })()
+                          } MB • {doc.chunk_count || doc.chunkCount || 0} chunks
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Status: <span className={`font-medium ${
+                            doc.status === 'completed' ? 'text-success-600' :
+                            doc.status === 'processing' ? 'text-warning-600' :
+                            'text-error-600'
+                          }`}>
+                            {doc.status || 'unknown'}
+                          </span>
+                        </p>
+                        {(doc.upload_date || doc.uploadedAt) && (
+                          <p className="text-xs text-gray-500">
+                            Uploaded: {
+                              (() => {
+                                const dateStr = doc.upload_date || doc.uploadedAt;
+                                // Handle SQLite datetime format: "2025-10-25 19:56:47"
+                                const date = new Date(dateStr.replace(' ', 'T'));
+                                return !isNaN(date.getTime()) ? date.toLocaleString() : 'Unknown date';
+                              })()
+                            }
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-400 font-mono">ID: {doc.id}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDeleteDocument(doc.id, doc.file_name || doc.fileName || 'this document')}
+                      className="ml-4 flex-shrink-0 p-2 text-gray-400 hover:text-error-600 hover:bg-error-50 rounded-lg transition-colors"
+                      title="Delete document"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

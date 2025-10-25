@@ -31,16 +31,10 @@ class VectorDatabase:
         print(f"Database initialized at: {self.db_path}")
 
     def create_tables(self):
-        """Create database tables"""
-        # Drop existing tables to force UUID migration
-        self.conn.execute("DROP TABLE IF EXISTS vectors")
-        self.conn.execute("DROP TABLE IF EXISTS documents")
-
-        print("⚠️  Dropped existing tables - migrating to UUID schema")
-
+        """Create database tables if they don't exist"""
         # Documents table with UUID
         self.conn.execute("""
-            CREATE TABLE documents (
+            CREATE TABLE IF NOT EXISTS documents (
                 id TEXT PRIMARY KEY,
                 file_name TEXT NOT NULL,
                 file_path TEXT,
@@ -54,7 +48,7 @@ class VectorDatabase:
 
         # Vectors table with UUID
         self.conn.execute("""
-            CREATE TABLE vectors (
+            CREATE TABLE IF NOT EXISTS vectors (
                 id TEXT PRIMARY KEY,
                 doc_id TEXT NOT NULL,
                 chunk_index INTEGER NOT NULL,
@@ -65,16 +59,15 @@ class VectorDatabase:
             )
         """)
 
-        # Create indexes
+        # Create indexes if they don't exist
         self.conn.execute("""
-            CREATE INDEX idx_vectors_doc_id ON vectors(doc_id)
+            CREATE INDEX IF NOT EXISTS idx_vectors_doc_id ON vectors(doc_id)
         """)
         self.conn.execute("""
-            CREATE INDEX idx_documents_upload_date ON documents(upload_date)
+            CREATE INDEX IF NOT EXISTS idx_documents_upload_date ON documents(upload_date)
         """)
 
         self.conn.commit()
-        print("✅ Database schema migrated to UUIDs")
 
     def add_document(self, file_info: Dict) -> Dict:
         """Add a document to the database"""
