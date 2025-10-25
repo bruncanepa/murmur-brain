@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { NavLink } from 'react-router-dom';
 
-function Sidebar({ activeView, onViewChange }) {
+function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navigationItems = [
     {
-      id: 'upload',
+      to: '/upload',
       label: 'Upload Documents',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -14,7 +15,7 @@ function Sidebar({ activeView, onViewChange }) {
       ),
     },
     {
-      id: 'search',
+      to: '/search',
       label: 'Search',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,7 +24,7 @@ function Sidebar({ activeView, onViewChange }) {
       ),
     },
     {
-      id: 'chat',
+      to: '/chat',
       label: 'Chat',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -32,7 +33,7 @@ function Sidebar({ activeView, onViewChange }) {
       ),
     },
     {
-      id: 'settings',
+      to: '/settings',
       label: 'Settings',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,19 +70,21 @@ function Sidebar({ activeView, onViewChange }) {
       {/* Navigation Items */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navigationItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onViewChange(item.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
-              activeView === item.id
-                ? 'bg-primary-600 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
+                isActive
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`
+            }
             title={isCollapsed ? item.label : ''}
           >
             {item.icon}
             {!isCollapsed && <span className="truncate">{item.label}</span>}
-          </button>
+          </NavLink>
         ))}
       </nav>
 
