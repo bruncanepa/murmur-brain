@@ -10,6 +10,17 @@ function FileUpload() {
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef(null);
 
+  // Phase display configuration
+  const phaseConfig = {
+    upload: { label: 'Uploading', color: 'bg-blue-600', icon: '⬆️' },
+    validation: { label: 'Validating', color: 'bg-indigo-600', icon: '✓' },
+    extraction: { label: 'Extracting', color: 'bg-purple-600', icon: '📄' },
+    embedding: { label: 'Generating Embeddings', color: 'bg-primary-600', icon: '🧠' },
+    storage: { label: 'Saving', color: 'bg-green-600', icon: '💾' },
+    complete: { label: 'Complete', color: 'bg-success-600', icon: '✅' },
+    error: { label: 'Error', color: 'bg-error-600', icon: '❌' }
+  };
+
   useEffect(() => {
     loadDocuments();
   }, []);
@@ -99,8 +110,12 @@ function FileUpload() {
       }
 
       try {
-        const result = await apiService.uploadDocument(file, (progress) => {
-          setUploadProgress((prev) => ({ ...prev, [file.name]: progress }));
+        const result = await apiService.uploadDocument(file, (progressData) => {
+          // progressData: { phase, progress, message, details? }
+          setUploadProgress((prev) => ({
+            ...prev,
+            [file.name]: progressData
+          }));
         });
 
         if (result.success) {
@@ -224,21 +239,49 @@ function FileUpload() {
 
             {/* Upload Progress */}
             {Object.keys(uploadProgress).length > 0 && (
-              <div className="space-y-2 pt-4">
-                {Object.entries(uploadProgress).map(([fileName, progress]) => (
-                  <div key={fileName} className="text-left">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600 truncate max-w-xs">{fileName}</span>
-                      <span className="text-primary-600 font-medium">{progress}%</span>
+              <div className="space-y-3 pt-4">
+                {Object.entries(uploadProgress).map(([fileName, progressData]) => {
+                  const phase = progressData.phase || 'upload';
+                  const progress = progressData.progress || 0;
+                  const message = progressData.message || 'Processing...';
+                  const config = phaseConfig[phase] || phaseConfig.upload;
+
+                  return (
+                    <div key={fileName} className="text-left bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+                      {/* File name and phase */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="text-lg">{config.icon}</span>
+                          <span className="text-sm font-semibold text-gray-700 truncate">{fileName}</span>
+                        </div>
+                        <span className="text-xs font-bold text-gray-900 ml-2">{progress}%</span>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden">
+                        <div
+                          className={`${config.color} h-2.5 rounded-full transition-all duration-500 ease-out`}
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+
+                      {/* Phase and message */}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className={`font-medium ${phase === 'error' ? 'text-error-600' : 'text-gray-600'}`}>
+                          {config.label}
+                        </span>
+                        <span className="text-gray-500 truncate ml-2 max-w-xs">{message}</span>
+                      </div>
+
+                      {/* Optional details (batch info) */}
+                      {progressData.details && progressData.details.batch && (
+                        <div className="mt-1 text-xs text-gray-500">
+                          Batch {progressData.details.batch}/{progressData.details.totalBatches}
+                        </div>
+                      )}
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
