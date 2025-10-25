@@ -105,6 +105,105 @@ class ApiService {
       return { success: false, error: errorMessage };
     }
   }
+
+  // ============ Chat API Methods ============
+
+  async createChat(title = null, docIds = []) {
+    try {
+      const response = await this.client.post('/api/chats', { title, doc_ids: docIds });
+      return { success: true, chatId: response.data.chatId };
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || error.message;
+      return { success: false, error: errorMessage };
+    }
+  }
+
+  async getChats() {
+    try {
+      const response = await this.client.get('/api/chats');
+      return { success: true, chats: response.data.chats };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getChat(chatId) {
+    try {
+      const response = await this.client.get(`/api/chats/${chatId}`);
+      return { success: true, chat: response.data.chat, messages: response.data.messages };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async deleteChat(chatId) {
+    try {
+      await this.client.delete(`/api/chats/${chatId}`);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async sendMessage(chatId, message, model = 'llama3.2') {
+    try {
+      const response = await this.client.post(`/api/chats/${chatId}/messages`, {
+        message,
+        model
+      });
+      return { success: true, ...response.data };
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || error.message;
+      return { success: false, error: errorMessage };
+    }
+  }
+
+  async linkDocument(chatId, docId) {
+    try {
+      await this.client.post(`/api/chats/${chatId}/documents`, { doc_id: docId });
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || error.message;
+      return { success: false, error: errorMessage };
+    }
+  }
+
+  async unlinkDocument(chatId, docId) {
+    try {
+      await this.client.delete(`/api/chats/${chatId}/documents/${docId}`);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getChatDocuments(chatId) {
+    try {
+      const response = await this.client.get(`/api/chats/${chatId}/documents`);
+      return { success: true, documents: response.data.documents };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async getChatModels() {
+    try {
+      const response = await this.client.get('/api/chat/models');
+      return { success: true, models: response.data.models };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async updateChatTitle(chatId, title) {
+    try {
+      await this.client.patch(`/api/chats/${chatId}/title`, { title });
+      return { success: true };
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || error.message;
+      return { success: false, error: errorMessage };
+    }
+  }
 }
 
 module.exports = new ApiService();

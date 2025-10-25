@@ -33,21 +33,86 @@ export const apiService = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await api.post('/api/documents/process', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      onUploadProgress: (progressEvent) => {
-        if (onProgress && progressEvent.total) {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          onProgress(percentCompleted);
-        }
-      },
-    });
+    // Use SSE endpoint for real-time progress
+    const url = `${API_URL}/api/documents/process-stream`;
 
-    return response.data;
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      let lastEventData = null;
+
+      xhr.open('POST', url, true);
+
+      // Track upload progress (file transfer to server)
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          const uploadPercent = Math.min(Math.round((e.loaded / e.total) * 5), 5);
+          onProgress({
+            phase: 'upload',
+            progress: uploadPercent,
+            message: 'Uploading file...'
+          });
+        }
+      });
+
+      // Handle SSE stream for processing progress
+      xhr.addEventListener('readystatechange', () => {
+        if (xhr.readyState === 3 || xhr.readyState === 4) {
+          // Parse SSE events from response text
+          const lines = xhr.responseText.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const eventData = JSON.parse(line.substring(6));
+                lastEventData = eventData;
+
+                if (onProgress) {
+                  onProgress(eventData);
+                }
+              } catch (e) {
+                console.error('Failed to parse SSE event:', e);
+              }
+            }
+          }
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          // Return the last event data (should be the complete event)
+          if (lastEventData && lastEventData.phase === 'complete') {
+            resolve({
+              success: true,
+              documentId: lastEventData.details.documentId,
+              metadata: {
+                fileName: lastEventData.details.fileName,
+                fileType: lastEventData.details.fileType,
+                fileSize: lastEventData.details.fileSize,
+                characterCount: lastEventData.details.characterCount,
+                wordCount: lastEventData.details.wordCount
+              },
+              chunkCount: lastEventData.details.chunkCount
+            });
+          } else if (lastEventData && lastEventData.phase === 'error') {
+            reject(new Error(lastEventData.message));
+          } else {
+            reject(new Error('Upload completed but no completion event received'));
+          }
+        } else {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Network error during upload'));
+      });
+
+      xhr.addEventListener('abort', () => {
+        reject(new Error('Upload was aborted'));
+      });
+
+      xhr.send(formData);
+    });
   },
 
   async getDocuments() {
@@ -72,12 +137,18 @@ export const apiService = {
 
   // Search Operations
   async search(query, topK = 5, threshold = 0.0, docIds = null) {
-    const response = await api.post('/api/search', {
+    const params = {
       query,
       top_k: topK,
       threshold,
-      doc_ids: docIds,
-    });
+    };
+
+    // Add doc_ids only if provided (as comma-separated string)
+    if (docIds && Array.isArray(docIds) && docIds.length > 0) {
+      params.doc_ids = docIds.join(',');
+    }
+
+    const response = await api.get('/api/search', { params });
     return response.data;
   },
 
@@ -151,6 +222,62 @@ export const apiService = {
     } catch (error) {
       return { success: false, error: error.message };
     }
+  },
+
+  // Chat Operations
+  async createChat(title = null, docIds = []) {
+    const response = await api.post('/api/chats', { title, doc_ids: docIds });
+    return response.data;
+  },
+
+  async getChats() {
+    const response = await api.get('/api/chats');
+    return response.data;
+  },
+
+  async getChat(chatId) {
+    const response = await api.get(`/api/chats/${chatId}`);
+    return response.data;
+  },
+
+  async deleteChat(chatId) {
+    const response = await api.delete(`/api/chats/${chatId}`);
+    return response.data;
+  },
+
+  async sendMessage(chatId, message, model = 'llama3.2') {
+    const response = await api.post(`/api/chats/${chatId}/messages`, {
+      message,
+      model,
+    });
+    return response.data;
+  },
+
+  async linkDocument(chatId, docId) {
+    const response = await api.post(`/api/chats/${chatId}/documents`, {
+      doc_id: docId,
+    });
+    return response.data;
+  },
+
+  async unlinkDocument(chatId, docId) {
+    const response = await api.delete(`/api/chats/${chatId}/documents/${docId}`);
+    return response.data;
+  },
+
+  async getChatDocuments(chatId) {
+    const response = await api.get(`/api/chats/${chatId}/documents`);
+    return response.data;
+  },
+
+  async getChatModels() {
+    const response = await api.get('/api/chat/models');
+    return response.data;
+  },
+
+  async updateChatTitle(chatId, title) {
+    const response = await api.patch(`/api/chats/${chatId}/title`, { title });
+    return response.data;
   },
 };
 

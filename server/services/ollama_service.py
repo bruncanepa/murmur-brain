@@ -112,6 +112,59 @@ class OllamaService:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    def generate_chat_response(self, messages: List[Dict], model: str = "llama3.2") -> str:
+        """
+        Generate chat response using Ollama
+
+        Args:
+            messages: List of message dicts with role and content
+            model: Ollama model to use for chat
+
+        Returns:
+            Generated response string
+        """
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/chat",
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "stream": False
+                },
+                timeout=120
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result.get("message", {}).get("content", "")
+        except Exception as e:
+            print(f"Error generating chat response: {e}")
+            raise Exception(f"Failed to generate chat response: {str(e)}")
+
+    def list_chat_models(self) -> List[str]:
+        """
+        List available chat models in Ollama
+
+        Returns:
+            List of model names
+        """
+        try:
+            response = requests.get(f"{self.base_url}/api/tags", timeout=5)
+            response.raise_for_status()
+            models = response.json().get("models", [])
+
+            # Filter out embedding models
+            chat_models = []
+            for model in models:
+                model_name = model.get("name", "")
+                # Exclude embedding-only models
+                if not any(embed in model_name.lower() for embed in ["embed", "embedding"]):
+                    chat_models.append(model_name)
+
+            return chat_models
+        except Exception as e:
+            print(f"Error listing chat models: {e}")
+            return []
+
 
 # Singleton instance
 _ollama_instance = None

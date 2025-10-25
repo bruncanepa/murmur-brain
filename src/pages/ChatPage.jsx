@@ -43,11 +43,16 @@ export default function ChatPage() {
   };
 
   const handleNewChat = async () => {
+    console.log('New chat button clicked');
     try {
+      console.log('Calling createChat API...');
       const result = await apiService.createChat();
+      console.log('Create chat result:', result);
       if (result.success) {
         await loadChats();
-        navigate(`/chat/${result.chatId}`);
+        navigate(`/chats/${result.chatId}`);
+      } else {
+        console.error('Create chat failed:', result);
       }
     } catch (err) {
       console.error('Error creating chat:', err);
@@ -55,7 +60,7 @@ export default function ChatPage() {
   };
 
   const handleSelectChat = (selectedChatId) => {
-    navigate(`/chat/${selectedChatId}`);
+    navigate(`/chats/${selectedChatId}`);
   };
 
   const handleDeleteChat = async (deleteChatId) => {
@@ -66,7 +71,7 @@ export default function ChatPage() {
       if (result.success) {
         await loadChats();
         if (chatId === deleteChatId) {
-          navigate('/chat');
+          navigate('/chats');
         }
       }
     } catch (err) {
@@ -84,7 +89,7 @@ export default function ChatPage() {
         onDeleteChat={handleDeleteChat}
         loading={loadingChats}
       />
-      <Chat chatId={chatId} allDocuments={documents} />
+      <Chat chatId={chatId || ''} allDocuments={documents} />
     </div>
   );
 }
