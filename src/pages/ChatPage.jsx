@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import ChatSidebar from '../components/ChatSidebar';
-import Chat from '../components/Chat';
-import apiService from '../utils/api';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import ChatSidebar from "../components/ChatSidebar";
+import Chat from "../components/Chat";
+import apiService from "../utils/api";
 
 export default function ChatPage() {
   const { chatId } = useParams();
@@ -25,7 +25,7 @@ export default function ChatPage() {
         setChats(result.chats || []);
       }
     } catch (err) {
-      console.error('Error loading chats:', err);
+      console.error("Error loading chats:", err);
     } finally {
       setLoadingChats(false);
     }
@@ -38,24 +38,24 @@ export default function ChatPage() {
         setDocuments(result.documents || []);
       }
     } catch (err) {
-      console.error('Error loading documents:', err);
+      console.error("Error loading documents:", err);
     }
   };
 
   const handleNewChat = async () => {
-    console.log('New chat button clicked');
+    console.log("New chat button clicked");
     try {
-      console.log('Calling createChat API...');
+      console.log("Calling createChat API...");
       const result = await apiService.createChat();
-      console.log('Create chat result:', result);
+      console.log("Create chat result:", result);
       if (result.success) {
         await loadChats();
         navigate(`/chats/${result.chatId}`);
       } else {
-        console.error('Create chat failed:', result);
+        console.error("Create chat failed:", result);
       }
     } catch (err) {
-      console.error('Error creating chat:', err);
+      console.error("Error creating chat:", err);
     }
   };
 
@@ -64,23 +64,28 @@ export default function ChatPage() {
   };
 
   const handleDeleteChat = async (deleteChatId) => {
-    if (!confirm('Are you sure you want to delete this chat? This cannot be undone.')) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this chat? This cannot be undone."
+      )
+    )
+      return;
 
     try {
       const result = await apiService.deleteChat(deleteChatId);
       if (result.success) {
         await loadChats();
         if (chatId === deleteChatId) {
-          navigate('/chats');
+          navigate("/chats");
         }
       }
     } catch (err) {
-      console.error('Error deleting chat:', err);
+      console.error("Error deleting chat:", err);
     }
   };
 
   return (
-    <div className="h-screen flex">
+    <div className="h-screen flex bg-white dark:bg-gray-900">
       <ChatSidebar
         chats={chats}
         activeChat={chatId}
@@ -89,7 +94,11 @@ export default function ChatPage() {
         onDeleteChat={handleDeleteChat}
         loading={loadingChats}
       />
-      <Chat chatId={chatId || ''} allDocuments={documents} />
+      <Chat
+        chatId={chatId || ""}
+        allDocuments={documents}
+        onMessageSent={loadChats}
+      />
     </div>
   );
 }

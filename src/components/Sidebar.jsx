@@ -46,12 +46,12 @@ function Sidebar() {
 
   return (
     <aside
-      className={`h-screen bg-white border-r border-gray-200 shadow-sm transition-all duration-300 flex flex-col ${
+      className={`h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-300 flex flex-col ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
       {/* Logo Section */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,8 +60,8 @@ function Sidebar() {
           </div>
           {!isCollapsed && (
             <div className="overflow-hidden">
-              <h1 className="text-lg font-bold text-gray-900 truncate">Local Brain</h1>
-              <p className="text-xs text-gray-500 truncate">AI Assistant</p>
+              <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">Local Brain</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">AI Assistant</p>
             </div>
           )}
         </div>
@@ -77,7 +77,7 @@ function Sidebar() {
               `w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
                 isActive
                   ? 'bg-primary-600 text-white shadow-md'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`
             }
             title={isCollapsed ? item.label : ''}
@@ -89,10 +89,10 @@ function Sidebar() {
       </nav>
 
       {/* Collapse Toggle */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-600 hover:bg-gray-100 transition-all"
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <svg

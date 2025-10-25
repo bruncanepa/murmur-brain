@@ -19,9 +19,9 @@ function ChatSidebar({ chats, activeChat, onSelectChat, onNewChat, onDeleteChat,
   };
 
   return (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+    <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <button
           onClick={onNewChat}
           disabled={loading}
@@ -42,14 +42,14 @@ function ChatSidebar({ chats, activeChat, onSelectChat, onNewChat, onDeleteChat,
           </div>
         ) : chats.length === 0 ? (
           <div className="p-6 text-center">
-            <svg className="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
             </svg>
-            <p className="text-gray-500 text-sm">No chats yet</p>
-            <p className="text-gray-400 text-xs mt-1">Create a new chat to get started</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No chats yet</p>
+            <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">Create a new chat to get started</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
             {chats.map((chat) => (
               <div
                 key={chat.id}
@@ -58,23 +58,23 @@ function ChatSidebar({ chats, activeChat, onSelectChat, onNewChat, onDeleteChat,
                 onMouseLeave={() => setHoveredChat(null)}
                 className={`p-4 cursor-pointer transition-all relative ${
                   activeChat === chat.id
-                    ? 'bg-primary-50 border-l-4 border-primary-600'
-                    : 'hover:bg-gray-50 border-l-4 border-transparent'
+                    ? 'bg-primary-50 dark:bg-primary-900/20 border-l-4 border-primary-600'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-transparent'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h3 className={`font-medium truncate ${
-                      activeChat === chat.id ? 'text-primary-900' : 'text-gray-900'
+                      activeChat === chat.id ? 'text-primary-900 dark:text-primary-300' : 'text-gray-900 dark:text-gray-100'
                     }`}>
-                      {chat.title || 'New Chat'}
+                      {chat.title || chat.first_message || 'New Chat'}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         {chat.message_count || 0} messages
                       </span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-400 dark:text-gray-500">•</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         {formatDate(chat.updated_at)}
                       </span>
                     </div>
@@ -87,7 +87,7 @@ function ChatSidebar({ chats, activeChat, onSelectChat, onNewChat, onDeleteChat,
                         e.stopPropagation();
                         onDeleteChat(chat.id);
                       }}
-                      className="flex-shrink-0 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                      className="flex-shrink-0 p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all"
                       title="Delete chat"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

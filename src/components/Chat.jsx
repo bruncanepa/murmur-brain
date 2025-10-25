@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import apiService from '../utils/api';
 
-function Chat({ chatId, allDocuments }) {
+function Chat({ chatId, allDocuments, onMessageSent }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -101,6 +101,11 @@ function Chat({ chatId, allDocuments }) {
           created_at: new Date().toISOString()
         };
         setMessages(prev => [...prev, assistantMessage]);
+
+        // Notify parent to refresh chat list (to update title)
+        if (onMessageSent) {
+          onMessageSent();
+        }
       } else {
         setError(result.error || 'Failed to get response');
       }
@@ -143,13 +148,13 @@ function Chat({ chatId, allDocuments }) {
 
   if (!chatId || chatId === '') {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
+      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <svg className="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-24 h-24 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
           </svg>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No chat selected</h3>
-          <p className="text-gray-500">Create a new chat or select one from the sidebar</p>
+          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No chat selected</h3>
+          <p className="text-gray-500 dark:text-gray-400">Create a new chat or select one from the sidebar</p>
         </div>
       </div>
     );
@@ -160,9 +165,9 @@ function Chat({ chatId, allDocuments }) {
   );
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
+    <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 bg-white">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
@@ -171,8 +176,8 @@ function Chat({ chatId, allDocuments }) {
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Chat</h2>
-              <p className="text-sm text-gray-500">{linkedDocs.length} documents linked</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Chat</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{linkedDocs.length} documents linked</p>
             </div>
           </div>
 
@@ -181,7 +186,7 @@ function Chat({ chatId, allDocuments }) {
             <select
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               {availableModels.map(model => (
                 <option key={model} value={model}>{model}</option>
@@ -195,7 +200,7 @@ function Chat({ chatId, allDocuments }) {
           {linkedDocs.map(doc => (
             <div
               key={doc.id}
-              className="inline-flex items-center gap-2 px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm"
+              className="inline-flex items-center gap-2 px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 rounded-full text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -203,7 +208,7 @@ function Chat({ chatId, allDocuments }) {
               <span className="font-medium">{doc.file_name}</span>
               <button
                 onClick={() => handleUnlinkDocument(doc.id)}
-                className="text-primary-600 hover:text-primary-800"
+                className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -215,7 +220,7 @@ function Chat({ chatId, allDocuments }) {
           {/* Add Document Button */}
           <button
             onClick={() => setShowDocSelector(!showDocSelector)}
-            className="inline-flex items-center gap-1 px-3 py-1 border-2 border-dashed border-gray-300 hover:border-primary-500 text-gray-600 hover:text-primary-600 rounded-full text-sm transition-all"
+            className="inline-flex items-center gap-1 px-3 py-1 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary-500 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-full text-sm transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -226,14 +231,14 @@ function Chat({ chatId, allDocuments }) {
 
         {/* Document Selector Dropdown */}
         {showDocSelector && unlinkedDocs.length > 0 && (
-          <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-lg max-h-40 overflow-y-auto">
+          <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg max-h-40 overflow-y-auto">
             {unlinkedDocs.map(doc => (
               <button
                 key={doc.id}
                 onClick={() => handleLinkDocument(doc.id)}
-                className="w-full text-left px-3 py-2 hover:bg-white rounded text-sm transition-all flex items-center gap-2"
+                className="w-full text-left px-3 py-2 hover:bg-white dark:hover:bg-gray-600 rounded text-sm transition-all flex items-center gap-2 text-gray-900 dark:text-gray-100"
               >
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 {doc.file_name}
@@ -247,11 +252,11 @@ function Chat({ chatId, allDocuments }) {
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.length === 0 ? (
           <div className="text-center py-12">
-            <svg className="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <p className="text-gray-500">No messages yet</p>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-gray-500 dark:text-gray-400">No messages yet</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">
               {linkedDocs.length === 0
                 ? 'Link documents first, then start chatting'
                 : 'Start a conversation by asking a question'}
@@ -276,7 +281,7 @@ function Chat({ chatId, allDocuments }) {
                   className={`p-4 rounded-lg ${
                     msg.role === 'user'
                       ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -285,31 +290,31 @@ function Chat({ chatId, allDocuments }) {
                 {/* Sources */}
                 {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
                   <div className="mt-2 space-y-2">
-                    <p className="text-xs font-semibold text-gray-500 uppercase">Sources:</p>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Sources:</p>
                     {msg.sources.map((source, sourceIdx) => (
                       <div
                         key={sourceIdx}
-                        className="p-3 bg-white border border-gray-200 rounded-lg text-sm"
+                        className="p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <span className="font-medium text-gray-900">{source.file_name}</span>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">{source.file_name}</span>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSimilarityBadgeColor(source.similarity)}`}>
                             {(source.similarity * 100).toFixed(0)}%
                           </span>
                         </div>
-                        <p className="text-gray-600 text-xs">{source.chunk_text}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">{source.chunk_text}</p>
                       </div>
                     ))}
                   </div>
                 )}
 
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                   {new Date(msg.created_at).toLocaleTimeString()}
                 </p>
               </div>
 
               {msg.role === 'user' && (
-                <div className="flex-shrink-0 w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+                <div className="flex-shrink-0 w-8 h-8 bg-gray-700 dark:bg-gray-600 rounded-full flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -338,14 +343,14 @@ function Chat({ chatId, allDocuments }) {
       {/* Error Message */}
       {error && (
         <div className="px-6 pb-2">
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
             {error}
           </div>
         </div>
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200 bg-white">
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="flex gap-2">
           <input
             type="text"
@@ -354,7 +359,7 @@ function Chat({ chatId, allDocuments }) {
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
             placeholder={linkedDocs.length === 0 ? "Link documents first..." : "Ask a question about your documents..."}
             disabled={loading || linkedDocs.length === 0}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
           />
           <button
             onClick={handleSendMessage}

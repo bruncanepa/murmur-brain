@@ -9,7 +9,7 @@ import "./App.css";
 function App() {
   return (
     <BrowserRouter>
-      <div className="h-screen bg-gray-100 flex overflow-hidden">
+      <div className="h-screen bg-gray-100 dark:bg-gray-900 flex overflow-hidden">
         {/* Sidebar */}
         <Sidebar />
 

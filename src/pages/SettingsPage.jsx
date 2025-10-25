@@ -1,9 +1,10 @@
+import Page from '../components/Page';
 import Settings from '../components/Settings';
 
 export default function SettingsPage() {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
+    <Page>
       <Settings />
-    </div>
+    </Page>
   );
 }
