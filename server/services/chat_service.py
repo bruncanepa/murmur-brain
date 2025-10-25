@@ -229,9 +229,11 @@ Please answer based on the context provided above."""
             # Save assistant response with sources
             self.db.add_message(chat_id, "assistant", response, sources, model)
 
-            # If this is the first message, generate title
+            # If this is the first message, use it as the chat title (truncated)
             if len(conversation_history) == 0:
-                title = self.generate_chat_title(user_message)
+                title = user_message.strip()
+                if len(title) > 50:
+                    title = title[:47] + '...'
                 self.db.update_chat_title(chat_id, title)
 
             return {
