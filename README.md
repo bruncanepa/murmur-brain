@@ -1,152 +1,221 @@
-# Local Brain - RAG Desktop Application
+# Local Brain
 
-A cross-platform Electron desktop application that enables local RAG (Retrieval-Augmented Generation) with Ollama.
+A cross-platform local RAG (Retrieval-Augmented Generation) application powered by Ollama. Upload documents, search semantically, and chat with your data - all running locally on your machine.
 
 ## Project Status
 
-✅ **Step 1: Project Setup - COMPLETED**
+✅ **Complete and Ready for Distribution**
 
-## Features (Planned)
+## Features
 
-- Upload and process CSV, PDF, and TXT files
-- Store documents in a local SQLite vector database
-- Interactive chat interface for querying documents
-- In-app Ollama model management and downloading
-- Runs entirely locally with no cloud dependencies
-- Cross-platform support (Linux, Windows, macOS)
+- ✅ Upload and process CSV, PDF, and TXT files
+- ✅ Store documents in a local SQLite vector database
+- ✅ Semantic search across all your documents
+- ✅ In-app Ollama model management and downloading
+- ✅ Modern, responsive web interface
+- ✅ Runs entirely locally with no cloud dependencies
+- ✅ Cross-platform support (macOS, Windows, Linux)
+- ✅ Auto-opens in your default browser
+- ⏳ Interactive chat interface (coming soon)
 
 ## Technology Stack
 
-### Core Framework
-- **Electron** - Desktop application framework
-- **Vite** - Fast build tool and dev server
+### Backend
+
+- **Python 3.8+** - Core application server
+- **FastAPI** - Modern REST API framework
+- **Uvicorn** - ASGI server
+- **SQLite** - Local document and vector storage
+
+### Frontend
+
 - **React** - UI framework
+- **Vite** - Fast build tool and dev server
+- **Axios** - HTTP client
+- **Tailwind CSS** - Utility-first CSS framework
 
 ### AI & RAG
+
 - **Ollama** - Local LLM runtime
-- **@langchain/community** - RAG pipeline implementation
-- **sqlite-vec** - Vector storage and similarity search
-- **sqlite3** - Local database
+- **PyPDF2** - PDF text extraction
+- **tiktoken** - Text tokenization and chunking
 
-### File Processing
-- **pdf-parse** - PDF text extraction
-- **csv-parse** - CSV parsing
-- **fs** (Node.js) - TXT file reading
+### Distribution
 
-### UI & Styling
-- **Tailwind CSS v4** - Utility-first CSS framework
-- **PostCSS** - CSS processing
+- **PyInstaller** - Cross-platform executable packaging
 
-### Build Tools
-- **electron-builder** - Cross-platform packaging
+## Architecture
+
+Local Brain uses a modern web-based architecture:
+
+- **Python Backend (FastAPI)**: Serves the React app as static files and provides REST APIs
+- **React Frontend**: Modern web interface with TailwindCSS
+- **Ollama**: Local AI service for embeddings and generation
+- **SQLite**: Local vector database for document storage
+
+When you run the application, it starts a Python server that automatically opens your default browser to the app.
 
 ## Project Structure
 
 ```
 local-brain/
-├── src/
-│   ├── main/           # Electron main process
-│   │   └── main.js     # Main application entry
-│   ├── preload/        # Electron preload scripts
-│   │   └── preload.js  # IPC bridge
-│   ├── renderer/       # React frontend
-│   │   ├── App.jsx     # Main React component
-│   │   ├── main.jsx    # React entry point
-│   │   ├── App.css     # Component styles
-│   │   └── index.css   # Global styles with Tailwind
-│   ├── components/     # React components (future)
-│   ├── services/       # Business logic (future)
-│   └── utils/          # Utility functions (future)
-├── resources/
-│   └── ollama/         # Ollama binaries (to be added)
-├── public/             # Static assets
-├── dist/               # Vite build output
-└── release/            # Electron build output (future)
+├── src/                    # React frontend
+│   ├── components/         # UI components
+│   │   ├── FileUpload.jsx  # Document upload
+│   │   ├── Search.jsx      # Semantic search
+│   │   ├── ModelManager.jsx# Ollama model management
+│   │   └── OllamaStatus.jsx# Status indicator
+│   ├── utils/
+│   │   └── api.js          # API service layer
+│   ├── App.jsx             # Main component
+│   └── main.jsx            # React entry point
+├── server/                 # Python backend
+│   ├── main.py             # FastAPI server
+│   └── services/           # Business logic
+│       ├── database.py     # SQLite operations
+│       ├── file_processor.py # Document parsing
+│       ├── ollama_service.py # Ollama integration
+│       └── vector_search.py  # Semantic search
+├── dist/                   # React build output
+├── local-brain.spec        # PyInstaller config
+├── build.sh / build.bat    # Build scripts
+└── BUILD.md                # Build documentation
 ```
 
-## Installation
+## Quick Start
 
 ### Prerequisites
-- Node.js 18+
-- npm 9+
 
-### Setup
+1. **Ollama** - Download and install from [ollama.ai](https://ollama.ai/)
+2. **Python 3.8+** - Required for the backend
+3. **Node.js 18+** - Required for building the frontend
 
-1. Clone the repository
-2. Install dependencies:
+### For End Users (Prebuilt Executable)
+
+1. Download the executable for your platform:
+
+   - **macOS**: `LocalBrain.app`
+   - **Windows**: `LocalBrain.exe`
+   - **Linux**: `LocalBrain`
+
+2. Make sure Ollama is running:
+
+   ```bash
+   ollama serve
+   ```
+
+3. Double-click the executable - it will auto-open in your browser!
+
+4. Download required AI models (if you haven't already):
+   - Use the Model Manager tab in the app, or
+   - Via command line:
+     ```bash
+     ollama pull nomic-embed-text  # Required for embeddings
+     ollama pull llama3.2           # Optional for chat
+     ```
+
+### For Developers
+
+#### Setup
+
 ```bash
-npm install --legacy-peer-deps
+# Clone the repository
+git clone https://github.com/bruncanepa/murmur-brain.git
+cd local-brain
+
+# Install Node dependencies
+npm install
+
+# Install Python dependencies
+cd server
+pip3 install -r requirements.txt
+cd ..
 ```
 
-## Development
-
-### Run Development Server
-
-**Note:** The dev server is configured but Electron integration needs to be refined. For now, build and test separately:
+#### Development Mode
 
 ```bash
-# Build the React app
-npm run build
+# Terminal 1: Start Python backend
+cd server && python3 main.py
 
-# Start Electron (after build)
-npm start
+# Terminal 2: Start Vite dev server (with hot reload)
+npm run dev
 ```
 
-### Build for Production
+Then open http://localhost:5173 in your browser.
+
+#### Build for Distribution
 
 ```bash
-# Build React app
-npm run build
-
-# Package Electron app
-npm run build:electron
+# Build everything (React + Executable)
+./build.sh  # macOS/Linux
+# or
+build.bat   # Windows
 ```
 
-## Step 1 Completed Tasks
+Output will be in `dist/LocalBrain` (or `LocalBrain.app` on macOS)
 
-✅ Project initialization with Electron + Vite + React
-✅ All core dependencies installed:
-  - Electron & electron-builder
-  - React & React DOM
-  - Vite & @vitejs/plugin-react
-  - Tailwind CSS v4 with PostCSS
-  - sqlite3 & sqlite-vec
-  - pdf-parse & csv-parse
-  - @langchain/community & ollama
-  - axios for HTTP requests
+## How It Works
 
-✅ Tailwind CSS v4 configured with PostCSS
-✅ electron-builder configured for Linux, Windows, and macOS
-✅ Project directory structure created
-✅ Git repository initialized with comprehensive .gitignore
-✅ Build verification completed successfully
+1. **Start**: Run the executable (or `python3 server/main.py` in development)
+2. **Server Launches**: Python FastAPI server starts on an available port
+3. **Browser Opens**: Your default browser automatically opens to the app
+4. **Upload Documents**: Drag and drop PDF, CSV, or TXT files
+5. **Processing**: Documents are chunked and embedded using Ollama
+6. **Search**: Perform semantic search across all your documents
+7. **Manage Models**: Download and manage Ollama AI models
 
-## Known Configuration Notes
+## Features in Detail
 
-- Using `--legacy-peer-deps` due to peer dependency conflicts between @langchain/community and pdf-parse versions
-- Tailwind CSS v4 requires `@tailwindcss/postcss` plugin instead of direct tailwindcss PostCSS plugin
-- Electron main and preload scripts use CommonJS (require/module.exports)
-- React app uses ES modules (import/export)
-- Config files (.mjs extension) use ES modules
+### Document Upload
 
-## Next Steps (From Product Memo)
+- Supports PDF, CSV, and TXT files
+- Drag-and-drop interface
+- Progress tracking
+- Automatic text extraction and chunking
 
-**Step 2: Bundle and Start Ollama**
-- Download and bundle Ollama binaries
-- Implement Ollama server startup on app launch
-- Configure Ollama to run on localhost:11434
+### Semantic Search
 
-**Step 3: Model Management**
-- Create React component for model downloading
-- Implement model listing and installation UI
-- Store models in app user data directory
+- Vector similarity search using embeddings
+- Configurable result count (top-k)
+- Adjustable similarity threshold
+- Results show similarity scores and source documents
 
-**Step 4: File Upload Handling**
-- Create drag-and-drop file upload component
-- Implement IPC communication for file processing
-- Parse CSV, PDF, and TXT files
+### Model Management
 
-**Step 5+: Continue per product memo...**
+- Browse available Ollama models
+- Download models with progress tracking
+- View installed models
+- Delete unwanted models
+- Automatic status checking
+
+## Documentation
+
+- **[BUILD.md](BUILD.md)** - Comprehensive build and distribution guide
+- **[MIGRATION_SUMMARY.md](MIGRATION_SUMMARY.md)** - Architecture migration details
+- **[START_GUIDE.md](START_GUIDE.md)** - Getting started guide
+
+## Troubleshooting
+
+### "Ollama not running"
+
+- Start Ollama: `ollama serve`
+- Or launch the Ollama desktop app
+- Check it's running at http://127.0.0.1:11434
+
+### "Browser doesn't open automatically"
+
+- Manually navigate to the URL shown in the console
+- Example: http://127.0.0.1:8000
+
+### "Port already in use"
+
+- The server automatically finds an available port
+- Check the console output for the actual port being used
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
