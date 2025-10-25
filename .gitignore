@@ -6,9 +6,12 @@ package-lock.json
 dist/
 release/
 *.log
+build/
+*.spec.bak
 
-# Electron
-out/
+# PyInstaller
+*.pyc
+__pycache__/
 
 # Environment
 .env
@@ -49,3 +52,9 @@ venv/
 tmp/
 temp/
 *.tmp
+
+# Logs directory
+logs/
+
+# API port file
+.api-port

@@ -1,73 +1,33 @@
 {
   "name": "local-brain",
-  "version": "1.0.0",
-  "main": "src/main/main.js",
+  "version": "2.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite\" \"electron .\" ",
+    "dev": "vite",
+    "dev:server": "cd server && python3 main.py",
     "build": "vite build",
-    "build:electron": "electron-builder",
-    "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "preview": "vite preview",
+    "start": "cd server && python3 main.py"
   },
   "keywords": [
-    "electron",
+    "pwa",
     "rag",
     "ollama",
     "ai"
   ],
   "author": "",
   "license": "MIT",
-  "description": "Local RAG Desktop Application with Ollama",
+  "description": "Local RAG PWA Application with Ollama",
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.15",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
-    "concurrently": "^9.2.1",
-    "electron": "^38.4.0",
-    "electron-builder": "^26.0.12",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.15",
-    "vite": "^7.1.11",
-    "wait-on": "^9.0.1"
+    "tailwindcss": "^3.4.18",
+    "vite": "^7.1.11"
   },
   "dependencies": {
-    "@langchain/community": "^1.0.0",
     "axios": "^1.12.2",
-    "csv-parse": "^6.1.0",
-    "ollama": "^0.6.0",
-    "pdf-parse": "^2.4.5",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "sqlite-vec": "^0.1.7-alpha.2",
-    "sqlite3": "^5.1.7"
-  },
-  "build": {
-    "appId": "com.localbrain.ragapp",
-    "productName": "Local Brain",
-    "directories": {
-      "buildResources": "resources",
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "src/main/**/*",
-      "src/preload/**/*",
-      "resources/**/*",
-      "package.json"
-    ],
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "category": "Utility"
-    },
-    "win": {
-      "target": "nsis"
-    },
-    "mac": {
-      "target": "dmg",
-      "category": "public.app-category.productivity"
-    }
+    "react-dom": "^19.2.0"
   }
 }

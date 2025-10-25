@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Brain - File Upload Test</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .upload-area {
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            transform: translateY(-2px);
+        }
+        .upload-area.drag-active {
+            transform: scale(1.02);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+        .file-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1rem;
+        }
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .success-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .error-badge {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef } = React;
+
+        function FileUpload() {
+            const [files, setFiles] = useState([]);
+            const [processing, setProcessing] = useState(false);
+            const [dragActive, setDragActive] = useState(false);
+            const fileInputRef = useRef(null);
+
+            const handleFileSelect = () => {
+                fileInputRef.current?.click();
+            };
+
+            const handleInputChange = async (e) => {
+                const selectedFiles = Array.from(e.target.files);
+                if (selectedFiles.length > 0) {
+                    await processFiles(selectedFiles);
+                }
+            };
+
+            const processFiles = async (fileList) => {
+                setProcessing(true);
+
+                const processedFiles = [];
+
+                for (const file of fileList) {
+                    // Simulate file processing
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    const isValid = file.size <= 50 * 1024 * 1024; // 50MB limit
+                    const supportedTypes = ['application/pdf', 'text/csv', 'text/plain'];
+                    const typeValid = supportedTypes.includes(file.type) || file.name.match(/\.(pdf|csv|txt)$/i);
+
+                    if (!isValid || !typeValid) {
+                        processedFiles.push({
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            status: 'error',
+                            error: !typeValid ? 'Unsupported file type' : 'File too large (max 50MB)',
+                        });
+                    } else {
+                        processedFiles.push({
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            status: 'success',
+                            metadata: {
+                                characterCount: Math.floor(Math.random() * 10000) + 1000,
+                                wordCount: Math.floor(Math.random() * 2000) + 200,
+                                processedAt: new Date().toISOString(),
+                            },
+                        });
+                    }
+                }
+
+                setFiles((prev) => [...processedFiles, ...prev]);
+                setProcessing(false);
+            };
+
+            const handleDrag = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.type === 'dragenter' || e.type === 'dragover') {
+                    setDragActive(true);
+                } else if (e.type === 'dragleave') {
+                    setDragActive(false);
+                }
+            };
+
+            const handleDrop = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDragActive(false);
+
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    const droppedFiles = Array.from(e.dataTransfer.files);
+                    await processFiles(droppedFiles);
+                }
+            };
+
+            const handleRemoveFile = (index) => {
+                setFiles((prev) => prev.filter((_, i) => i !== index));
+            };
+
+            const handleClearAll = () => {
+                setFiles([]);
+            };
+
+            const formatFileSize = (bytes) => {
+                return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            };
+
+            return (
+                <div className="card p-8">
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Local Brain</h1>
+                        <p className="text-gray-600">Your AI-powered document assistant</p>
+                    </div>
+
+                    {/* Upload Area */}
+                    <div
+                        className={`upload-area border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer ${
+                            dragActive
+                                ? 'drag-active border-indigo-500 bg-indigo-50'
+                                : 'border-gray-300 bg-gray-50 hover:border-indigo-400 hover:bg-indigo-50'
+                        }`}
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                        onClick={handleFileSelect}
+                    >
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            multiple
+                            accept=".pdf,.csv,.txt"
+                            onChange={handleInputChange}
+                            className="hidden"
+                        />
+
+                        <svg className="file-icon text-indigo-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+
+                        {processing ? (
+                            <div className="space-y-3">
+                                <div className="pulse text-indigo-600 font-semibold text-lg">
+                                    Processing files...
+                                </div>
+                                <div className="w-48 h-2 bg-gray-200 rounded-full mx-auto overflow-hidden">
+                                    <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse"></div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-lg text-gray-700 font-medium mb-2">
+                                        Drop your documents here
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        or click to browse your files
+                                    </p>
+                                </div>
+                                <div className="flex items-center justify-center gap-6 text-xs text-gray-500">
+                                    <div className="flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span>PDF</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span>CSV</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span>TXT</span>
+                                    </div>
+                                    <span className="text-gray-400">|</span>
+                                    <span>Max 50MB</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* File List */}
+                    {files.length > 0 && (
+                        <div className="mt-8">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-semibold text-gray-900">
+                                    Uploaded Files ({files.length})
+                                </h3>
+                                <button
+                                    onClick={handleClearAll}
+                                    className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                >
+                                    Clear All
+                                </button>
+                            </div>
+
+                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                                {files.map((file, index) => (
+                                    <div
+                                        key={index}
+                                        className={`p-4 rounded-lg border-l-4 ${
+                                            file.status === 'success'
+                                                ? 'bg-green-50 border-green-500'
+                                                : 'bg-red-50 border-red-500'
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span
+                                                        className={`px-3 py-1 text-xs font-semibold rounded-full text-white ${
+                                                            file.status === 'success'
+                                                                ? 'success-badge'
+                                                                : 'error-badge'
+                                                        }`}
+                                                    >
+                                                        {file.status === 'success' ? '✓ Success' : '✗ Failed'}
+                                                    </span>
+                                                    <span className="font-semibold text-gray-900">
+                                                        {file.name}
+                                                    </span>
+                                                </div>
+
+                                                {file.status === 'success' ? (
+                                                    <div className="text-sm text-gray-600 space-y-1">
+                                                        <div className="flex gap-4">
+                                                            <span>Size: {formatFileSize(file.size)}</span>
+                                                            <span>Characters: {file.metadata.characterCount.toLocaleString()}</span>
+                                                            <span>Words: {file.metadata.wordCount.toLocaleString()}</span>
+                                                        </div>
+                                                        <p className="text-xs text-gray-500">
+                                                            Processed: {new Date(file.metadata.processedAt).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-red-600 font-medium">{file.error}</p>
+                                                )}
+                                            </div>
+
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleRemoveFile(index);
+                                                }}
+                                                className="ml-4 text-gray-400 hover:text-red-500 transition-colors"
+                                            >
+                                                <svg
+                                                    className="h-6 w-6"
+                                                    fill="none"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<FileUpload />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+This is a sample text file for testing the file upload functionality.
+
+It contains multiple lines of text.
+
+The Local Brain application should be able to:
+- Read this file
+- Extract the text content
+- Display processing information
+- Show character and word counts
+
+This is a test to verify that the file processing service works correctly.
