@@ -59,28 +59,17 @@ class VectorDatabase:
             )
         """)
 
-        # Chats table
+        # Chats table with documents JSONB array
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS chats (
                 id TEXT PRIMARY KEY,
                 title TEXT,
+                documents TEXT DEFAULT '[]',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
 
-        # Chat documents (many-to-many relationship)
-        self.conn.execute("""
-            CREATE TABLE IF NOT EXISTS chat_documents (
-                id TEXT PRIMARY KEY,
-                chat_id TEXT NOT NULL,
-                doc_id TEXT NOT NULL,
-                added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE,
-                FOREIGN KEY (doc_id) REFERENCES documents(id) ON DELETE CASCADE,
-                UNIQUE(chat_id, doc_id)
-            )
-        """)
 
         # Messages table
         self.conn.execute("""
@@ -107,13 +96,76 @@ class VectorDatabase:
             CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages(chat_id)
         """)
         self.conn.execute("""
-            CREATE INDEX IF NOT EXISTS idx_chat_documents_chat_id ON chat_documents(chat_id)
-        """)
-        self.conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_chats_updated_at ON chats(updated_at)
         """)
 
         self.conn.commit()
+
+        # Migrate existing chat_documents data if table exists
+        self._migrate_chat_documents()
+
+    def _migrate_chat_documents(self):
+        """
+        Migrate data from chat_documents junction table to documents JSONB column
+        This is a one-time migration that safely handles the transition
+        """
+        try:
+            # Check if chat_documents table exists
+            cursor = self.conn.execute("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='chat_documents'
+            """)
+            if not cursor.fetchone():
+                return  # Table doesn't exist, nothing to migrate
+
+            # Check if we need to add documents column to existing chats table
+            cursor = self.conn.execute("PRAGMA table_info(chats)")
+            columns = [row[1] for row in cursor.fetchall()]
+            if 'documents' not in columns:
+                # Add documents column with default empty array
+                self.conn.execute("""
+                    ALTER TABLE chats ADD COLUMN documents TEXT DEFAULT '[]'
+                """)
+                self.conn.commit()
+
+            # Migrate data from chat_documents to chats.documents
+            cursor = self.conn.execute("""
+                SELECT chat_id, doc_id, added_at
+                FROM chat_documents
+                ORDER BY chat_id, added_at
+            """)
+
+            # Group by chat_id
+            chat_docs = {}
+            for row in cursor.fetchall():
+                chat_id, doc_id, added_at = row
+                if chat_id not in chat_docs:
+                    chat_docs[chat_id] = []
+                chat_docs[chat_id].append({
+                    "document_id": doc_id,
+                    "created_at": added_at
+                })
+
+            # Update each chat with its documents array
+            for chat_id, docs in chat_docs.items():
+                docs_json = json.dumps(docs)
+                self.conn.execute("""
+                    UPDATE chats SET documents = ? WHERE id = ?
+                """, (docs_json, chat_id))
+
+            self.conn.commit()
+
+            # Drop the old chat_documents table
+            self.conn.execute("DROP TABLE IF EXISTS chat_documents")
+            self.conn.commit()
+
+            if chat_docs:
+                print(f"Migrated {len(chat_docs)} chats from chat_documents to JSONB")
+
+        except Exception as e:
+            print(f"Migration warning: {e}")
+            # Don't fail initialization if migration has issues
+            pass
 
     def add_document(self, file_info: Dict) -> Dict:
         """Add a document to the database"""
@@ -410,13 +462,34 @@ class VectorDatabase:
             }
 
     def link_document_to_chat(self, chat_id: str, doc_id: str) -> Dict:
-        """Link a document to a chat"""
+        """Link a document to a chat by adding it to the documents JSONB array"""
         try:
-            link_id = str(uuid.uuid4())
+            # Get current documents array
+            cursor = self.conn.execute("""
+                SELECT documents FROM chats WHERE id = ?
+            """, (chat_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                return {"success": False, "error": "Chat not found"}
+
+            # Parse existing documents
+            current_docs = json.loads(row[0] or '[]')
+
+            # Check if document is already linked
+            if any(doc['document_id'] == doc_id for doc in current_docs):
+                return {"success": True}  # Already linked, no error
+
+            # Add new document with timestamp
+            current_docs.append({
+                "document_id": doc_id,
+                "created_at": datetime.now().isoformat()
+            })
+
+            # Update the chat
             self.conn.execute("""
-                INSERT OR IGNORE INTO chat_documents (id, chat_id, doc_id)
-                VALUES (?, ?, ?)
-            """, (link_id, chat_id, doc_id))
+                UPDATE chats SET documents = ? WHERE id = ?
+            """, (json.dumps(current_docs), chat_id))
             self.conn.commit()
 
             return {"success": True}
@@ -424,12 +497,27 @@ class VectorDatabase:
             return {"success": False, "error": str(e)}
 
     def unlink_document_from_chat(self, chat_id: str, doc_id: str) -> Dict:
-        """Remove document link from a chat"""
+        """Remove document link from a chat by filtering the documents JSONB array"""
         try:
+            # Get current documents array
+            cursor = self.conn.execute("""
+                SELECT documents FROM chats WHERE id = ?
+            """, (chat_id,))
+            row = cursor.fetchone()
+
+            if not row:
+                return {"success": False, "error": "Chat not found"}
+
+            # Parse existing documents
+            current_docs = json.loads(row[0] or '[]')
+
+            # Filter out the document to unlink
+            updated_docs = [doc for doc in current_docs if doc['document_id'] != doc_id]
+
+            # Update the chat
             self.conn.execute("""
-                DELETE FROM chat_documents
-                WHERE chat_id = ? AND doc_id = ?
-            """, (chat_id, doc_id))
+                UPDATE chats SET documents = ? WHERE id = ?
+            """, (json.dumps(updated_docs), chat_id))
             self.conn.commit()
 
             return {"success": True}
@@ -437,16 +525,43 @@ class VectorDatabase:
             return {"success": False, "error": str(e)}
 
     def get_chat_documents(self, chat_id: str) -> Dict:
-        """Get all documents linked to a chat"""
+        """Get all documents linked to a chat from the documents JSONB array"""
         try:
+            # Get the chat's documents array
             cursor = self.conn.execute("""
-                SELECT d.*, cd.added_at
-                FROM documents d
-                JOIN chat_documents cd ON d.id = cd.doc_id
-                WHERE cd.chat_id = ?
-                ORDER BY cd.added_at DESC
+                SELECT documents FROM chats WHERE id = ?
             """, (chat_id,))
-            documents = [dict(row) for row in cursor.fetchall()]
+            row = cursor.fetchone()
+
+            if not row:
+                return {"success": False, "error": "Chat not found"}
+
+            # Parse the documents array
+            docs_array = json.loads(row[0] or '[]')
+
+            if not docs_array:
+                return {"success": True, "documents": []}
+
+            # Extract document IDs and create a mapping for created_at
+            doc_ids = [doc['document_id'] for doc in docs_array]
+            created_at_map = {doc['document_id']: doc['created_at'] for doc in docs_array}
+
+            # Fetch document details
+            placeholders = ','.join('?' * len(doc_ids))
+            cursor = self.conn.execute(f"""
+                SELECT * FROM documents
+                WHERE id IN ({placeholders})
+            """, doc_ids)
+
+            documents = []
+            for row in cursor.fetchall():
+                doc = dict(row)
+                # Add the created_at from the JSONB array (renamed to added_at for compatibility)
+                doc['added_at'] = created_at_map.get(doc['id'])
+                documents.append(doc)
+
+            # Sort by added_at descending
+            documents.sort(key=lambda d: d.get('added_at', ''), reverse=True)
 
             return {
                 "success": True,
