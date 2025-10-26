@@ -369,7 +369,7 @@ function ModelManager() {
             )}
 
             {!searching && searchResults.length > 0 && (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="space-y-2 overflow-y-auto">
                 {searchResults.map((model) => (
                   <div
                     key={model.name}
@@ -519,7 +519,6 @@ function ModelManager() {
             columns={modelColumns}
             data={models}
             keyExtractor={(model) => model.name}
-            maxHeight="max-h-[500px]"
           />
         )}
 

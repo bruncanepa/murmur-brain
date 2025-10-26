@@ -11,7 +11,6 @@ interface TableProps<T> {
   columns: TableColumn<T>[];
   data: T[];
   keyExtractor: (item: T) => string;
-  maxHeight?: string;
   className?: string;
 }
 
@@ -23,12 +22,11 @@ export default function Table<T>({
   columns,
   data,
   keyExtractor,
-  maxHeight = 'max-h-96',
   className = '',
 }: TableProps<T>) {
   return (
     <div className={`overflow-x-auto ${className}`}>
-      <div className={`overflow-y-auto ${maxHeight}`}>
+      <div className={`overflow-y-auto`}>
         <table className="w-full">
           <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10">
             <tr className="border-b border-gray-200 dark:border-gray-700">

@@ -22,7 +22,7 @@ function Page({ title, subtitle, children, className }: PageProps) {
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto pb-6 rounded-lg">{children}</div>
+      <div className="flex-1 overflow-y-auto rounded-lg">{children}</div>
     </div>
   );
 }
