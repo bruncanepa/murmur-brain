@@ -1,11 +1,11 @@
 #!/bin/bash
-# Build script for Local Brain
+# Build script for Murmur Brain
 # Builds the React frontend and packages everything into a single executable
 
 set -e  # Exit on error
 
 echo "======================================"
-echo "Local Brain - Build Script"
+echo "Murmur Brain - Build Script"
 echo "======================================"
 
 # Colors for output
@@ -33,7 +33,7 @@ echo -e "${GREEN}✓ React frontend built successfully${NC}"
 
 # Step 2: Package with PyInstaller
 echo -e "\n${BLUE}Step 2: Packaging with PyInstaller...${NC}"
-pyinstaller local-brain.spec --clean --noconfirm
+pyinstaller murmur-brain.spec --clean --noconfirm
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ Build completed successfully!${NC}"
@@ -41,20 +41,20 @@ if [ $? -eq 0 ]; then
     echo "Executable location:"
 
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "  → dist/LocalBrain.app"
+        echo "  → dist/MurmurBrain.app"
         echo ""
         echo "To run:"
-        echo "  open dist/LocalBrain.app"
+        echo "  open dist/MurmurBrain.app"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "  → dist/LocalBrain"
+        echo "  → dist/MurmurBrain"
         echo ""
         echo "To run:"
-        echo "  ./dist/LocalBrain"
+        echo "  ./dist/MurmurBrain"
     else
-        echo "  → dist/LocalBrain.exe"
+        echo "  → dist/MurmurBrain.exe"
         echo ""
         echo "To run:"
-        echo "  dist\\LocalBrain.exe"
+        echo "  dist\\MurmurBrain.exe"
     fi
 else
     echo -e "${YELLOW}Build failed. Check the output above for errors.${NC}"

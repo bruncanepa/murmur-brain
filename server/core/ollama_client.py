@@ -18,48 +18,76 @@ class OllamaClient:
         self.embedding_model = embedding_model or settings.ollama_embedding_model
         self.timeout = settings.ollama_timeout
 
-    def generate_embedding(self, text: str) -> List[float]:
+    def generate_embedding(self, text: str, max_retries: int = 3) -> List[float]:
         """
-        Generate embedding for a single text string.
+        Generate embedding for a single text string with retry logic.
 
         Args:
             text: Text to generate embedding for
+            max_retries: Maximum number of retry attempts (default: 3)
 
         Returns:
             List of floats representing the embedding vector (768 dimensions)
 
         Raises:
-            Exception: If embedding generation fails
+            Exception: If embedding generation fails after all retries
         """
-        try:
-            response = requests.post(
-                f"{self.base_url}/api/embeddings",
-                json={
-                    "model": self.embedding_model,
-                    "prompt": text
-                },
-                timeout=30
-            )
-            response.raise_for_status()
-            result = response.json()
-            return result.get("embedding", [])
-        except Exception as e:
-            print(f"Error generating embedding: {e}")
-            raise Exception(f"Failed to generate embedding: {str(e)}")
+        last_error = None
+
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(
+                    f"{self.base_url}/api/embeddings",
+                    json={
+                        "model": self.embedding_model,
+                        "prompt": text
+                    },
+                    timeout=30
+                )
+
+                # Log response details if error occurs
+                if response.status_code != 200:
+                    print(f"❌ Ollama returned {response.status_code} (attempt {attempt + 1}/{max_retries})")
+                    print(f"Response body: {response.text}")
+                    print(f"Text length: {len(text)} chars")
+                    print(f"Text preview: {text[:200]}..." if len(text) > 200 else f"Text: {repr(text)}")
+
+                response.raise_for_status()
+                result = response.json()
+
+                # Success - return embedding
+                if attempt > 0:
+                    print(f"✅ Embedding succeeded on retry {attempt + 1}")
+                return result.get("embedding", [])
+
+            except Exception as e:
+                last_error = e
+
+                if attempt < max_retries - 1:
+                    # Exponential backoff: 1s, 2s, 4s
+                    wait_time = 2 ** attempt
+                    print(f"⚠️ Embedding failed (attempt {attempt + 1}/{max_retries}), retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    # Final attempt failed
+                    print(f"❌ Embedding failed after {max_retries} attempts: {e}")
+
+        # All retries exhausted
+        raise Exception(f"Failed to generate embedding after {max_retries} attempts: {str(last_error)}")
 
     def generate_embeddings_batch(
         self,
         texts: List[str],
-        batch_size: int = 10,
-        delay: float = 0.1
+        batch_size: int = 5,
+        delay: float = 0.5
     ) -> List[List[float]]:
         """
-        Generate embeddings for multiple texts in batches.
+        Generate embeddings for multiple texts in batches with retry logic.
 
         Args:
             texts: List of text strings to generate embeddings for
-            batch_size: Number of texts to process in each batch
-            delay: Delay in seconds between batch items to avoid overwhelming Ollama
+            batch_size: Number of texts to process in each batch (default: 5)
+            delay: Delay in seconds between embeddings to allow GPU recovery (default: 0.5s)
 
         Returns:
             List of embedding vectors
@@ -80,7 +108,7 @@ class OllamaClient:
                 try:
                     embedding = self.generate_embedding(text)
                     embeddings.append(embedding)
-                    # Small delay to avoid overwhelming Ollama
+                    # Delay to allow Ollama GPU memory recovery between requests
                     time.sleep(delay)
                 except Exception as e:
                     print(f"Error generating embedding for chunk: {e}")

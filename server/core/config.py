@@ -1,5 +1,5 @@
 """
-Configuration management for Local Brain backend.
+Configuration management for Murmur Brain backend.
 
 Provides application settings and environment configuration.
 """
@@ -13,7 +13,7 @@ class Settings(BaseModel):
     """Application settings with defaults."""
 
     # Application
-    app_name: str = "Local Brain API"
+    app_name: str = "Murmur Brain"
     app_version: str = "1.0.0"
     debug: bool = False
 

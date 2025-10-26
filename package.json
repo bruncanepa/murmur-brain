@@ -20,7 +20,12 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "type-check": "tsc --noEmit",
-    "validate": "pnpm type-check && pnpm lint && pnpm format:check"
+    "validate": "pnpm type-check && pnpm lint && pnpm format:check",
+    "migrate:up": "python3 server/migrate.py up",
+    "migrate:down": "python3 server/migrate.py down",
+    "migrate:status": "python3 server/migrate.py status",
+    "migrate:new": "python3 server/migrate.py new",
+    "migrate:history": "python3 server/migrate.py history"
   },
   "keywords": [
     "murmur-brain",

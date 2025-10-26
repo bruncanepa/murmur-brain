@@ -1,5 +1,5 @@
 """
-Local Brain API - Main application entry point.
+Murmur Brain API - Main application entry point.
 
 A modular FastAPI application for RAG-based document Q&A using local Ollama models.
 """
@@ -9,8 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 import os
-import webbrowser
-import threading
+import sys
 
 # Import module routers
 from modules.documents.documents_controller import router as documents_router
@@ -87,6 +86,45 @@ async def get_chat_models_legacy():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Setup static files serving for production build
+# Note: Catch-all route MUST be registered last, so we do this at module level
+
+# Handle both development and PyInstaller bundle
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    # Running in PyInstaller bundle
+    base_path = Path(sys._MEIPASS)
+    dist_path = base_path / "dist"
+else:
+    # Running in development
+    dist_path = Path(__file__).parent.parent / "dist"
+
+print(f"Looking for dist at: {dist_path}")
+print(f"Dist exists: {dist_path.exists()}")
+if dist_path.exists():
+    print(f"Index.html exists: {(dist_path / 'index.html').exists()}")
+
+# Mount static assets if dist exists
+if dist_path.exists() and (dist_path / "assets").exists():
+    print(f"Serving static files from: {dist_path}")
+    app.mount("/assets", StaticFiles(directory=str(dist_path / "assets")), name="assets")
+
+# Frontend catch-all route - MUST be last to not override API routes
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str = ""):
+    """Serve the React SPA for all non-API routes."""
+    # Don't serve frontend for API routes
+    if full_path.startswith("api"):
+        raise HTTPException(status_code=404, detail="API endpoint not found")
+
+    # Serve index.html for all frontend routes (SPA catch-all)
+    index_path = dist_path / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path)
+
+    # Fallback if dist folder doesn't exist
+    raise HTTPException(status_code=404, detail="Frontend not built. Run 'pnpm build' first.")
+
+
 def find_free_port(start_port=8000):
     """Find a free port starting from start_port."""
     import socket
@@ -101,19 +139,6 @@ def find_free_port(start_port=8000):
     raise RuntimeError(f"Could not find a free port in range {start_port}-{start_port + 100}")
 
 
-def open_browser(port: int):
-    """Open the default browser after a delay."""
-    import time
-    time.sleep(1.5)  # Wait for server to be ready
-    url = f"http://127.0.0.1:{port}"
-    print(f"\nOpening browser at {url}...")
-    try:
-        webbrowser.open(url)
-    except Exception as e:
-        print(f"Could not auto-open browser: {e}")
-        print(f"Please manually open: {url}")
-
-
 if __name__ == "__main__":
     import uvicorn
 
@@ -122,35 +147,8 @@ if __name__ == "__main__":
     if port == 0:
         port = find_free_port(8000)
 
-    # Setup static files serving for production build
-    dist_path = Path(__file__).parent.parent / "dist"
-    if dist_path.exists():
-        print(f"Serving static files from: {dist_path}")
-
-        # Mount static files - API routes take precedence
-        app.mount("/assets", StaticFiles(directory=str(dist_path / "assets")), name="assets")
-
-        # Serve index.html for all non-API routes
-        @app.get("/{full_path:path}")
-        async def serve_frontend(full_path: str):
-            """Serve the React app for all non-API routes."""
-            if full_path.startswith("api/"):
-                raise HTTPException(status_code=404, detail="API endpoint not found")
-
-            # Serve index.html for all frontend routes
-            index_path = dist_path / "index.html"
-            if index_path.exists():
-                return FileResponse(index_path)
-            raise HTTPException(status_code=404, detail="Frontend not found")
-    else:
-        print("Warning: dist folder not found. Run 'npm run build' first.")
-        print("Server will only serve API endpoints.")
-
     print(f"Starting server on http://127.0.0.1:{port}")
     print("Press CTRL+C to quit")
-
-    # Auto-open browser in a separate thread
-    browser_thread = threading.Thread(target=open_browser, args=(port,), daemon=True)
-    browser_thread.start()
+    print("\nNOTE: For desktop app, run: python3 server/desktop.py")
 
     uvicorn.run(app, host="127.0.0.1", port=port)

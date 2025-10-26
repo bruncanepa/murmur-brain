@@ -29,18 +29,17 @@ A privacy-first, local AI application powered by Ollama. Upload your PDFs, books
 - **Uvicorn** - ASGI server
 - **SQLite** - Local document and vector storage
 
-### Frontend
-
-- **React** - UI framework
-- **Vite** - Fast build tool and dev server
-- **Axios** - HTTP client
-- **Tailwind CSS** - Utility-first CSS framework
-
 ### AI & RAG
 
 - **Ollama** - Local LLM runtime
 - **PyPDF2** - PDF text extraction
 - **tiktoken** - Text tokenization and chunking
+
+### Frontend
+
+- **React** - UI framework
+- **Vite** - Fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
 
 ### Distribution
 

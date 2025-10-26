@@ -79,7 +79,7 @@ class DocumentService:
             if generate_embeddings:
                 print(f"Generating embeddings for {len(result['chunks'])} chunks...")
                 chunk_texts = [chunk["text"] for chunk in result["chunks"]]
-                embeddings = self.ollama.generate_embeddings_batch(chunk_texts, batch_size=10)
+                embeddings = self.ollama.generate_embeddings_batch(chunk_texts, batch_size=5)
 
                 # Attach embeddings to chunks
                 for i, chunk in enumerate(result["chunks"]):
@@ -185,7 +185,7 @@ class DocumentService:
 
             chunk_texts = [chunk["text"] for chunk in result["chunks"]]
             embeddings = []
-            batch_size = 10
+            batch_size = 5
 
             for i in range(0, chunk_count, batch_size):
                 batch = chunk_texts[i:i + batch_size]
