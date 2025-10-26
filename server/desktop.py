@@ -58,6 +58,27 @@ def wait_for_server(port: int, timeout: int = 10):
     return False
 
 
+def check_ollama_on_startup():
+    """Check Ollama availability on startup (non-blocking)."""
+    try:
+        from modules.ollama.ollama_service import OllamaService
+        from core.ollama_client import get_ollama_client
+
+        service = OllamaService(get_ollama_client())
+        status = service.get_status()
+
+        if not status['ready']:
+            print(f"\n⚠️  {status['message']}")
+            print(f"   Action required: {status['action']}")
+            print("   The app will still work for browsing documents.")
+            print("   You'll be prompted to install Ollama when you open the app.\n")
+        else:
+            print(f"✅ {status['message']}\n")
+    except Exception as e:
+        print(f"⚠️  Could not check Ollama status: {e}")
+        print("   The app will still work for browsing documents.\n")
+
+
 def main():
     """Main entry point for desktop application."""
     settings = get_settings()
@@ -84,6 +105,9 @@ def main():
         sys.exit(1)
 
     print("Backend server is ready!")
+
+    # Check Ollama status on startup (non-blocking)
+    check_ollama_on_startup()
 
     # Create JavaScript bridge
     bridge = DesktopBridge(port=port, api_url=api_url)

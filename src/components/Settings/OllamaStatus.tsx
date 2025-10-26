@@ -1,18 +1,12 @@
 import { useState, useEffect } from 'react';
 import apiService from '@/utils/api';
-
-interface OllamaStatusState {
-  running: boolean;
-  models: any[];
-  error?: string;
-}
+import OllamaSetupWizard from './OllamaSetupWizard';
+import type { OllamaStatusResponse } from '@/types/api';
 
 function OllamaStatus() {
-  const [status, setStatus] = useState<OllamaStatusState>({
-    running: false,
-    models: [],
-  });
+  const [status, setStatus] = useState<OllamaStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
 
   useEffect(() => {
     checkStatus();
@@ -27,10 +21,27 @@ function OllamaStatus() {
       setStatus(result);
     } catch (error: any) {
       console.error('Error checking Ollama status:', error);
-      setStatus({ running: false, models: [], error: error.message });
+      setStatus({
+        success: false,
+        running: false,
+        installed: false,
+        ready: false,
+        action: 'install_required',
+        message: 'Failed to check Ollama status',
+        error: error.message,
+      });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSetupComplete = () => {
+    setShowSetupWizard(false);
+    checkStatus(); // Refresh status
+  };
+
+  const handleSetupSkip = () => {
+    setShowSetupWizard(false);
   };
 
   if (loading) {
@@ -44,31 +55,75 @@ function OllamaStatus() {
     );
   }
 
+  if (!status) {
+    return null;
+  }
+
+  // Determine UI state based on status
+  const getStatusColor = () => {
+    if (status.ready) {
+      return 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300';
+    } else if (status.installed && !status.running) {
+      return 'bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-300';
+    } else {
+      return 'bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-300';
+    }
+  };
+
+  const getStatusIcon = () => {
+    if (status.ready) {
+      return (
+        <div className="w-2 h-2 rounded-full bg-success-500 dark:bg-success-400 animate-pulse-slow" />
+      );
+    } else if (status.installed && !status.running) {
+      return (
+        <div className="w-2 h-2 rounded-full bg-warning-500 dark:bg-warning-400" />
+      );
+    } else {
+      return (
+        <div className="w-2 h-2 rounded-full bg-error-500 dark:bg-error-400" />
+      );
+    }
+  };
+
+  const getStatusText = () => {
+    if (status.ready) {
+      return 'AI Ready';
+    } else if (status.installed && !status.running) {
+      return 'AI Not Running';
+    } else {
+      return 'AI Not Installed';
+    }
+  };
+
   return (
-    <div className="flex items-center gap-2">
-      <div
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
-          status.running
-            ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
-            : 'bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-300'
-        }`}
-      >
+    <>
+      <div className="flex items-center gap-2 flex-wrap">
         <div
-          className={`w-2 h-2 rounded-full ${
-            status.running
-              ? 'bg-success-500 dark:bg-success-400 animate-pulse-slow'
-              : 'bg-error-500 dark:bg-error-400'
-          }`}
-        />
-        {status.running ? 'AI Ready' : 'AI Offline'}
-      </div>
-      {status.models.length > 0 && (
-        <div className="px-2.5 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg text-xs font-semibold">
-          {status.models.length}{' '}
-          {status.models.length === 1 ? 'model' : 'models'}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${getStatusColor()}`}
+        >
+          {getStatusIcon()}
+          {getStatusText()}
         </div>
+
+        {!status.ready && (
+          <button
+            onClick={() => setShowSetupWizard(true)}
+            className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            Setup Guide
+          </button>
+        )}
+      </div>
+
+      {showSetupWizard && (
+        <OllamaSetupWizard
+          initialStatus={status}
+          onComplete={handleSetupComplete}
+          onSkip={handleSetupSkip}
+        />
       )}
-    </div>
+    </>
   );
 }
 

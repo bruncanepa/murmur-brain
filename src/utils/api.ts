@@ -7,6 +7,7 @@ import type {
   StatsResponse,
   SearchResponse,
   OllamaStatusResponse,
+  LegacyOllamaStatusResponse,
   PullModelResponse,
   DeleteModelResponse,
   OllamaLibrarySearchResponse,
@@ -212,8 +213,27 @@ export const apiService = {
     return response.data;
   },
 
-  // Ollama Operations (direct to Ollama API)
+  // Ollama Operations
   async getOllamaStatus(): Promise<OllamaStatusResponse> {
+    try {
+      const response = await api.get<OllamaStatusResponse>('/api/ollama/status');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error getting Ollama status:', error);
+      return {
+        success: false,
+        running: false,
+        installed: false,
+        ready: false,
+        action: 'install_required',
+        message: 'Failed to check Ollama status',
+        error: error.message,
+      };
+    }
+  },
+
+  // Get list of installed models (direct Ollama API call)
+  async getInstalledModels(): Promise<LegacyOllamaStatusResponse> {
     try {
       const response = await axios.get('http://127.0.0.1:11434/api/tags', {
         timeout: 5000,
@@ -222,7 +242,7 @@ export const apiService = {
         running: true,
         models: response.data.models || [],
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         running: false,
         models: [],

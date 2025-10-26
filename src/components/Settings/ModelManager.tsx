@@ -126,7 +126,7 @@ function ModelManager() {
   const loadModels = async () => {
     try {
       setLoading(true);
-      const result = await apiService.getOllamaStatus();
+      const result = await apiService.getInstalledModels();
       if (result.running) {
         setModels(result.models || []);
       }

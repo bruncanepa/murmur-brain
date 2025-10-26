@@ -108,7 +108,34 @@ export interface OllamaModel {
   };
 }
 
+export interface InstallationInstructions {
+  platform: string;
+  method: string;
+  steps: string[];
+  download_url: string;
+  command?: string;
+}
+
+export interface PlatformInfo {
+  system: string;
+  machine: string;
+  platform: string;
+}
+
 export interface OllamaStatusResponse {
+  success: boolean;
+  running: boolean;
+  installed: boolean;
+  ready: boolean;
+  action: 'ready' | 'install_required' | 'start_service';
+  message: string;
+  installation_instructions?: InstallationInstructions;
+  platform?: PlatformInfo;
+  error?: string;
+}
+
+// Legacy status response for direct Ollama API calls (kept for backward compatibility)
+export interface LegacyOllamaStatusResponse {
   running: boolean;
   models: OllamaModel[];
   error?: string;
