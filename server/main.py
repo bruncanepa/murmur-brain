@@ -52,6 +52,14 @@ async def startup_event():
     db = get_db_connection()
     print(f"Database: {db.db_path}")
 
+    # Run database migrations automatically
+    from core.migrations import auto_migrate
+    migration_success = auto_migrate(db.db_path)
+
+    if not migration_success:
+        print("⚠️  Warning: Database migrations failed. App may not work correctly.")
+        print("   You can manually run migrations with: python3 server/migrate.py up")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():

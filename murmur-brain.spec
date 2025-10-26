@@ -46,6 +46,11 @@ hiddenimports = [
     'asyncio',
     'webview',
     'webview.window',
+    'alembic',
+    'alembic.runtime.migration',
+    'alembic.script',
+    'sqlalchemy',
+    'sqlalchemy.engine',
 ]
 
 # Collect data files
@@ -58,6 +63,10 @@ if dist_dir.exists():
 # Add the new modular backend structure
 datas.append((str(server_dir / 'core'), 'core'))
 datas.append((str(server_dir / 'modules'), 'modules'))
+
+# Add database migrations
+datas.append((str(server_dir / 'migrations'), 'migrations'))
+datas.append((str(server_dir / 'alembic.ini'), '.'))
 
 # Analysis - what to include
 a = Analysis(
