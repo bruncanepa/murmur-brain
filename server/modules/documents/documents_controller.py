@@ -1,0 +1,160 @@
+"""
+Document API controller.
+
+FastAPI routes for document management.
+"""
+import json
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi.responses import JSONResponse, StreamingResponse
+from typing import List
+from .documents_model import DocumentRepository, DocumentResponse
+from .documents_service import DocumentService
+from .documents_processor import FileProcessor
+from core.dependencies import get_db, get_ollama
+from core.database import DatabaseConnection
+from core.ollama_client import OllamaClient
+
+
+router = APIRouter(prefix="/api/documents", tags=["documents"])
+
+
+def get_document_repository(db: DatabaseConnection = Depends(get_db)) -> DocumentRepository:
+    """Dependency that provides document repository."""
+    return DocumentRepository(db)
+
+
+def get_file_processor() -> FileProcessor:
+    """Dependency that provides file processor."""
+    return FileProcessor()
+
+
+def get_document_service(
+    doc_repo: DocumentRepository = Depends(get_document_repository),
+    ollama: OllamaClient = Depends(get_ollama),
+    processor: FileProcessor = Depends(get_file_processor)
+) -> DocumentService:
+    """Dependency that provides document service."""
+    return DocumentService(doc_repo, ollama, processor)
+
+
+@router.post("/process", response_model=dict)
+async def process_document(
+    file: UploadFile = File(...),
+    service: DocumentService = Depends(get_document_service)
+):
+    """
+    Process an uploaded document (PDF, CSV, TXT).
+    Extracts text, creates chunks, and stores in database.
+    """
+    try:
+        result = await service.process_document(file)
+        return result
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"Error processing document: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/process-stream")
+async def process_document_stream(
+    file: UploadFile = File(...),
+    service: DocumentService = Depends(get_document_service)
+):
+    """
+    Process an uploaded document with real-time progress streaming via SSE.
+    Extracts text, creates chunks, and stores in database while reporting progress.
+    """
+
+    async def generate_progress_events():
+        """Generator that yields Server-Sent Events for progress updates."""
+
+        async def progress_callback(phase: str, progress: int, message: str, details: dict = None):
+            """Helper to send progress event."""
+            event_data = {
+                "phase": phase,
+                "progress": progress,
+                "message": message
+            }
+            if details:
+                event_data["details"] = details
+            return f"data: {json.dumps(event_data)}\n\n"
+
+        try:
+            # Process document with streaming progress
+            progress_updates = []
+
+            async def capture_progress(phase, progress, message, details=None):
+                event = await progress_callback(phase, progress, message, details)
+                progress_updates.append(event)
+
+            await service.process_document_stream(file, progress_callback=capture_progress)
+
+            # Yield all progress updates
+            for update in progress_updates:
+                yield update
+
+        except Exception as e:
+            error_msg = str(e)
+            print(f"Error processing document: {error_msg}")
+            yield f"data: {json.dumps({'phase': 'error', 'progress': 0, 'message': error_msg})}\n\n"
+
+    return StreamingResponse(
+        generate_progress_events(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
+@router.get("", response_model=dict)
+async def get_documents(service: DocumentService = Depends(get_document_service)):
+    """Get all documents."""
+    try:
+        documents = service.get_all_documents()
+        return {
+            "success": True,
+            "documents": [doc.model_dump() for doc in documents]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{doc_id}", response_model=dict)
+async def get_document(
+    doc_id: str,
+    service: DocumentService = Depends(get_document_service)
+):
+    """Get a specific document by ID."""
+    try:
+        document = service.get_document(doc_id)
+        if document:
+            return {
+                "success": True,
+                "document": document.model_dump()
+            }
+        else:
+            raise HTTPException(status_code=404, detail="Document not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{doc_id}", response_model=dict)
+async def delete_document(
+    doc_id: str,
+    service: DocumentService = Depends(get_document_service)
+):
+    """Delete a document and its chunks."""
+    try:
+        success = service.delete_document(doc_id)
+        if success:
+            return {"success": True, "message": "Document deleted"}
+        else:
+            raise HTTPException(status_code=404, detail="Document not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

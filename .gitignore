@@ -9,9 +9,28 @@ release/
 build/
 *.spec.bak
 
-# PyInstaller
+# PyInstaller build artifacts
 *.pyc
 __pycache__/
+dist_pyinstaller/
+*.spec.bak
+
+# Executable build outputs
+*.app
+*.dmg
+*.exe
+*.deb
+*.rpm
+*.AppImage
+*.tar.gz
+*.zip
+
+# Code signing
+*.p12
+*.pfx
+*.pem
+*.key
+certificate.*
 
 # Environment
 .env

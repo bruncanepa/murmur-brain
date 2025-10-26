@@ -1,6 +1,8 @@
-# Local Brain
+# Murmur Brain
 
-A cross-platform local RAG (Retrieval-Augmented Generation) application powered by Ollama. Upload documents, search semantically, and chat with your data - all running locally on your machine.
+**Chat with your library using AI - no Internet, no third parties, just you and your documents.**
+
+A privacy-first, local AI application powered by Ollama. Upload your PDFs, books, and documents, then chat with them using AI - completely private, completely offline, running entirely on your machine.
 
 ## Project Status
 
@@ -46,7 +48,7 @@ A cross-platform local RAG (Retrieval-Augmented Generation) application powered 
 
 ## Architecture
 
-Local Brain uses a modern web-based architecture:
+Murmur Brain uses a modern web-based architecture:
 
 - **Python Backend (FastAPI)**: Serves the React app as static files and provides REST APIs
 - **React Frontend**: Modern web interface with TailwindCSS
@@ -54,33 +56,6 @@ Local Brain uses a modern web-based architecture:
 - **SQLite**: Local vector database for document storage
 
 When you run the application, it starts a Python server that automatically opens your default browser to the app.
-
-## Project Structure
-
-```
-local-brain/
-├── src/                    # React frontend
-│   ├── components/         # UI components
-│   │   ├── FileUpload.jsx  # Document upload
-│   │   ├── Search.jsx      # Semantic search
-│   │   ├── ModelManager.jsx# Ollama model management
-│   │   └── OllamaStatus.jsx# Status indicator
-│   ├── utils/
-│   │   └── api.js          # API service layer
-│   ├── App.jsx             # Main component
-│   └── main.jsx            # React entry point
-├── server/                 # Python backend
-│   ├── main.py             # FastAPI server
-│   └── services/           # Business logic
-│       ├── database.py     # SQLite operations
-│       ├── file_processor.py # Document parsing
-│       ├── ollama_service.py # Ollama integration
-│       └── vector_search.py  # Semantic search
-├── dist/                   # React build output
-├── local-brain.spec        # PyInstaller config
-├── build.sh / build.bat    # Build scripts
-└── BUILD.md                # Build documentation
-```
 
 ## Quick Start
 
@@ -93,10 +68,9 @@ local-brain/
 ### For End Users (Prebuilt Executable)
 
 1. Download the executable for your platform:
-
-   - **macOS**: `LocalBrain.app`
-   - **Windows**: `LocalBrain.exe`
-   - **Linux**: `LocalBrain`
+   - **macOS**: `MurmurBrain.app`
+   - **Windows**: `MurmurBrain.exe`
+   - **Linux**: `MurmurBrain`
 
 2. Make sure Ollama is running:
 
@@ -121,7 +95,7 @@ local-brain/
 ```bash
 # Clone the repository
 git clone https://github.com/bruncanepa/murmur-brain.git
-cd local-brain
+cd murmur-brain
 
 # Install Node dependencies
 npm install
@@ -153,7 +127,7 @@ Then open http://localhost:5173 in your browser.
 build.bat   # Windows
 ```
 
-Output will be in `dist/LocalBrain` (or `LocalBrain.app` on macOS)
+Output will be in `dist/MurmurBrain` (or `MurmurBrain.app` on macOS)
 
 ## How It Works
 
