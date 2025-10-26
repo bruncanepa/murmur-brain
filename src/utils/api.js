@@ -171,7 +171,7 @@ export const apiService = {
     }
   },
 
-  async pullModel(modelName, onProgress) {
+  async pullModel(modelName, onProgress, abortSignal = null) {
     try {
       const response = await fetch('http://127.0.0.1:11434/api/pull', {
         method: 'POST',
@@ -179,6 +179,7 @@ export const apiService = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name: modelName }),
+        signal: abortSignal,
       });
 
       if (!response.ok) {
@@ -209,6 +210,9 @@ export const apiService = {
 
       return { success: true };
     } catch (error) {
+      if (error.name === 'AbortError') {
+        return { success: false, error: 'Download cancelled', cancelled: true };
+      }
       return { success: false, error: error.message };
     }
   },
@@ -221,6 +225,30 @@ export const apiService = {
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
+    }
+  },
+
+  async searchOllamaLibrary(query = '', category = null) {
+    try {
+      const params = new URLSearchParams();
+      if (query) params.append('q', query);
+      if (category) params.append('category', category);
+
+      const response = await api.get(`/api/ollama/library/search?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error searching Ollama library:', error);
+      return { success: false, error: error.message, models: [], count: 0 };
+    }
+  },
+
+  async getOllamaCategories() {
+    try {
+      const response = await api.get('/api/ollama/library/categories');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting Ollama categories:', error);
+      return { success: false, error: error.message, categories: [] };
     }
   },
 

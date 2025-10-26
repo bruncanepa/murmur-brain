@@ -1,8 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 
 function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Load collapse state from localStorage, default to false (not collapsed)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    return savedState === 'true';
+  });
+
+  // Save collapse state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
+  }, [isCollapsed]);
 
   const navigationItems = [
     {

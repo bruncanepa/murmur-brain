@@ -17,6 +17,7 @@ from services.file_processor import FileProcessor
 from services.ollama_service import get_ollama_service
 from services.vector_search import get_vector_search
 from services.chat_service import get_chat_service
+from services.ollama_checker import get_ollama_checker
 
 app = FastAPI(title="Local Brain API", version="1.0.0")
 
@@ -35,6 +36,7 @@ file_processor = FileProcessor()
 ollama_service = get_ollama_service()
 vector_search = get_vector_search()
 chat_service = get_chat_service()
+ollama_checker = get_ollama_checker()
 
 
 @app.on_event("startup")
@@ -65,6 +67,65 @@ async def health_check():
         return JSONResponse(
             status_code=503,
             content={"status": "unhealthy", "error": str(e)}
+        )
+
+
+@app.get("/api/ollama/status")
+async def get_ollama_status():
+    """Check Ollama installation and running status"""
+    try:
+        status = ollama_checker.get_status()
+        return {
+            "success": True,
+            **status
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+
+@app.get("/api/ollama/library/search")
+async def search_ollama_library(q: str = "", category: str = None):
+    """Search Ollama library for available models"""
+    try:
+        from services.ollama_library_scraper import get_scraper
+
+        scraper = get_scraper()
+        results = scraper.search_models(query=q, category=category)
+
+        return {
+            "success": True,
+            "models": results,
+            "count": len(results)
+        }
+    except Exception as e:
+        logger.error(f"Error searching Ollama library: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+
+@app.get("/api/ollama/library/categories")
+async def get_ollama_categories():
+    """Get list of model categories"""
+    try:
+        from services.ollama_library_scraper import get_scraper
+
+        scraper = get_scraper()
+        categories = scraper.get_categories()
+
+        return {
+            "success": True,
+            "categories": categories
+        }
+    except Exception as e:
+        logger.error(f"Error getting categories: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
         )
 
 

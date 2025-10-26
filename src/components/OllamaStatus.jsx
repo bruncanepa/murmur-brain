@@ -26,9 +26,9 @@ function OllamaStatus() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
-        <span className="text-sm text-gray-600">Checking...</span>
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg">
+        <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse" />
+        <span className="text-sm text-gray-600 dark:text-gray-400">Checking...</span>
       </div>
     );
   }
@@ -38,19 +38,19 @@ function OllamaStatus() {
       <div
         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
           status.running
-            ? 'bg-success-100 text-success-700'
-            : 'bg-error-100 text-error-700'
+            ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
+            : 'bg-error-100 dark:bg-error-900/30 text-error-700 dark:text-error-300'
         }`}
       >
         <div
           className={`w-2 h-2 rounded-full ${
-            status.running ? 'bg-success-500 animate-pulse-slow' : 'bg-error-500'
+            status.running ? 'bg-success-500 dark:bg-success-400 animate-pulse-slow' : 'bg-error-500 dark:bg-error-400'
           }`}
         />
         {status.running ? 'AI Ready' : 'AI Offline'}
       </div>
       {status.models.length > 0 && (
-        <div className="px-2.5 py-1 bg-primary-100 text-primary-700 rounded-lg text-xs font-semibold">
+        <div className="px-2.5 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg text-xs font-semibold">
           {status.models.length} {status.models.length === 1 ? 'model' : 'models'}
         </div>
       )}
