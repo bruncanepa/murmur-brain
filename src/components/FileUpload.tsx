@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import apiService from '../utils/api';
+import apiService from '@/utils/api';
 import { Document } from '@/types/api';
+import { PageSection } from '@/components/Page';
+import Table, { TableColumn } from './Table';
 
 function FileUpload() {
   const [files, setFiles] = useState([]);
@@ -186,14 +188,16 @@ function FileUpload() {
     setFiles([]);
   };
 
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden animate-fade-in">
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-center mb-6">
-          <div className="flex-shrink-0 w-12 h-12 bg-primary-500 rounded-lg flex items-center justify-center">
+  // Define table columns
+  const documentColumns: TableColumn<Document>[] = [
+    {
+      key: 'document',
+      header: 'Document',
+      render: (doc) => (
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0 w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
             <svg
-              className="w-6 h-6 text-white"
+              className="w-5 h-5 text-primary-600 dark:text-primary-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -202,21 +206,119 @@ function FileUpload() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
           </div>
-          <div className="ml-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              Upload Documents
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Add files to your knowledge base
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+              {doc.file_name || doc.fileName || 'Unknown'}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">
+              {doc.id}
             </p>
           </div>
         </div>
+      ),
+    },
+    {
+      key: 'type',
+      header: 'Type',
+      render: (doc) => (
+        <span className="text-gray-600 dark:text-gray-400">
+          {doc.file_type || doc.fileType || 'N/A'}
+        </span>
+      ),
+    },
+    {
+      key: 'size',
+      header: 'Size',
+      render: (doc) => {
+        const size = doc.file_size || doc.fileSize;
+        const sizeInMB =
+          size && !isNaN(size) ? (size / (1024 * 1024)).toFixed(2) : '0.00';
+        return (
+          <span className="text-gray-600 dark:text-gray-400">
+            {sizeInMB} MB
+          </span>
+        );
+      },
+    },
+    {
+      key: 'chunks',
+      header: 'Chunks',
+      render: (doc) => (
+        <span className="text-gray-600 dark:text-gray-400">
+          {doc.chunk_count || doc.chunkCount || 0}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (doc) => (
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            doc.status === 'completed'
+              ? 'bg-success-100 dark:bg-success-600/20 text-success-700 dark:text-success-400'
+              : doc.status === 'processing'
+                ? 'bg-warning-100 dark:bg-warning-600/20 text-warning-700 dark:text-warning-400'
+                : 'bg-error-100 dark:bg-error-600/20 text-error-700 dark:text-error-400'
+          }`}
+        >
+          {doc.status || 'unknown'}
+        </span>
+      ),
+    },
+    {
+      key: 'uploaded',
+      header: 'Uploaded',
+      render: (doc) => {
+        const dateStr = doc.upload_date || doc.uploadedAt;
+        if (!dateStr) return <span className="text-gray-600 dark:text-gray-400">N/A</span>;
+        const date = new Date(dateStr.replace(' ', 'T'));
+        const formatted = !isNaN(date.getTime())
+          ? date.toLocaleDateString()
+          : 'Unknown';
+        return <span className="text-gray-600 dark:text-gray-400">{formatted}</span>;
+      },
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      align: 'right',
+      render: (doc) => (
+        <button
+          onClick={() =>
+            handleDeleteDocument(
+              doc.id,
+              doc.file_name || doc.fileName || 'this document'
+            )
+          }
+          className="inline-flex items-center justify-center p-2 text-gray-400 dark:text-gray-500 hover:text-error-600 dark:hover:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-lg transition-colors"
+          title="Delete document"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </button>
+      ),
+    },
+  ];
 
-        {/* Drop Zone */}
+  return (
+    <div className="animate-fade-in">
+      <PageSection title="Upload your documents">
         <div
           className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
             dragActive
@@ -501,48 +603,20 @@ function FileUpload() {
             </div>
           </div>
         )}
+      </PageSection>
 
-        {/* Documents List from Database */}
-        <div className={files.length > 0 ? 'mt-6' : 'mt-0'}>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Uploaded Documents
-              <span className="ml-2 inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-800 dark:text-primary-300">
-                {documents.length}
-              </span>
-            </h3>
-            {documents.length > 0 && (
-              <button
-                onClick={loadDocuments}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 font-medium transition-colors flex items-center gap-1"
-                title="Refresh list"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-                Refresh
-              </button>
-            )}
-          </div>
-
-          {loading ? (
-            <div className="flex justify-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="w-12 h-12 border-4 border-primary-200 dark:border-primary-900 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin" />
-            </div>
-          ) : documents.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
+      <PageSection
+        title="Your documents"
+        className={files.length > 0 ? 'mt-6' : 'mt-0'}
+        action={
+          documents.length > 0 ? (
+            <button
+              onClick={loadDocuments}
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 font-medium transition-colors flex items-center gap-1"
+              title="Refresh list"
+            >
               <svg
-                className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"
+                className="w-4 h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -550,121 +624,49 @@ function FileUpload() {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                 />
               </svg>
-              <p className="text-gray-600 dark:text-gray-400 font-medium">
-                No documents uploaded yet
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                Upload your first document to get started
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="relative p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-md transition-all duration-200"
-                >
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0 w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-                      <svg
-                        className="w-6 h-6 text-primary-600 dark:text-primary-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                    </div>
-
-                    <div className="ml-4 flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                        {doc.file_name || doc.fileName || 'Unknown'}
-                      </p>
-                      <div className="mt-1 space-y-1">
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {doc.file_type || doc.fileType || 'N/A'} •{' '}
-                          {(() => {
-                            const size = doc.file_size || doc.fileSize;
-                            if (size && !isNaN(size)) {
-                              return (size / (1024 * 1024)).toFixed(2);
-                            }
-                            return '0.00';
-                          })()}{' '}
-                          MB • {doc.chunk_count || doc.chunkCount || 0} chunks
-                        </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          Status:{' '}
-                          <span
-                            className={`font-medium ${
-                              doc.status === 'completed'
-                                ? 'text-success-600 dark:text-success-400'
-                                : doc.status === 'processing'
-                                  ? 'text-warning-600 dark:text-warning-400'
-                                  : 'text-error-600 dark:text-error-400'
-                            }`}
-                          >
-                            {doc.status || 'unknown'}
-                          </span>
-                        </p>
-                        {(doc.upload_date || doc.uploadedAt) && (
-                          <p className="text-xs text-gray-500 dark:text-gray-500">
-                            Uploaded:{' '}
-                            {(() => {
-                              const dateStr = doc.upload_date || doc.uploadedAt;
-                              // Handle SQLite datetime format: "2025-10-25 19:56:47"
-                              const date = new Date(dateStr.replace(' ', 'T'));
-                              return !isNaN(date.getTime())
-                                ? date.toLocaleString()
-                                : 'Unknown date';
-                            })()}
-                          </p>
-                        )}
-                        <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-                          ID: {doc.id}
-                        </p>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() =>
-                        handleDeleteDocument(
-                          doc.id,
-                          doc.file_name || doc.fileName || 'this document'
-                        )
-                      }
-                      className="ml-4 flex-shrink-0 p-2 text-gray-400 dark:text-gray-500 hover:text-error-600 dark:hover:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-lg transition-colors"
-                      title="Delete document"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+              Refresh
+            </button>
+          ) : undefined
+        }
+      >
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-12 h-12 border-4 border-primary-200 dark:border-primary-900 border-t-primary-600 dark:border-t-primary-400 rounded-full animate-spin" />
+          </div>
+        ) : documents.length === 0 ? (
+          <div className="text-center py-12">
+            <svg
+              className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+              />
+            </svg>
+            <p className="text-gray-600 dark:text-gray-400 font-medium">
+              No documents uploaded yet
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+              Upload your first document to get started
+            </p>
+          </div>
+        ) : (
+          <Table
+            columns={documentColumns}
+            data={documents}
+            keyExtractor={(doc) => doc.id}
+          />
+        )}
+      </PageSection>
     </div>
   );
 }

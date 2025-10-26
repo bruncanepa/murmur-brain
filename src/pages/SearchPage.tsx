@@ -1,9 +1,9 @@
-import Page from '../components/Page';
-import Search from '../components/Search';
+import { Page } from '@/components/Page';
+import Search from '@/components/Search';
 
 export default function SearchPage() {
   return (
-    <Page>
+    <Page title="Search" subtitle="Search your documents semantically">
       <Search />
     </Page>
   );

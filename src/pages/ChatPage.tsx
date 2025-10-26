@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import ChatSidebar from '../components/ChatSidebar';
-import Chat from '../components/Chat';
-import apiService from '../utils/api';
+import { ChatSidebar, Chat } from '@/components/Chat';
+import apiService from '@/utils/api';
 import { Chat as ChatType, Document } from '@/types/api';
+import Page from '@/components/Page/Page';
 
 export default function ChatPage() {
   const { chatId } = useParams();
@@ -83,20 +83,26 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen flex bg-white dark:bg-gray-900">
-      <ChatSidebar
-        chats={chats}
-        activeChat={chatId}
-        onSelectChat={handleSelectChat}
-        onNewChat={handleNewChat}
-        onDeleteChat={handleDeleteChat}
-        loading={loadingChats}
-      />
-      <Chat
-        chatId={chatId || ''}
-        allDocuments={documents}
-        onMessageSent={loadChats}
-      />
-    </div>
+    <Page
+      title="Chats"
+      subtitle="Chat with your documents privately"
+      className="w-full h-full"
+    >
+      <div className="flex h-full flex-row">
+        <ChatSidebar
+          chats={chats}
+          activeChat={chatId}
+          onSelectChat={handleSelectChat}
+          onNewChat={handleNewChat}
+          onDeleteChat={handleDeleteChat}
+          loading={loadingChats}
+        />
+        <Chat
+          chatId={chatId || ''}
+          allDocuments={documents}
+          onMessageSent={loadChats}
+        />
+      </div>
+    </Page>
   );
 }

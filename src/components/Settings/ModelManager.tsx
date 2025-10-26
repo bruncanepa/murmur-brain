@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import apiService from '../utils/api';
-import OllamaStatus from './OllamaStatus';
+import apiService from '@/utils/api';
+import { OllamaStatus } from '@/components/Settings';
 import { OllamaModel } from '@/types/api';
+import Table, { TableColumn } from '@/components/Table';
 
 function ModelManager() {
   const [models, setModels] = useState<OllamaModel[]>([]);
@@ -136,7 +137,7 @@ function ModelManager() {
     }
   };
 
-  const deleteModel = async (modelName) => {
+  const deleteModel = async (modelName: string) => {
     if (!confirm(`Are you sure you want to delete ${modelName}?`)) {
       return;
     }
@@ -157,13 +158,85 @@ function ModelManager() {
     return models.some((m) => m.name === modelName);
   };
 
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden animate-fade-in">
-      <div className="p-6">
-        <OllamaStatus />
-      </div>
+  // Define table columns for installed models
+  const modelColumns: TableColumn<OllamaModel>[] = [
+    {
+      key: 'type',
+      header: 'Type',
+      render: (model) => (
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+            model.name.includes('embed')
+              ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+              : 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+          }`}
+        >
+          {model.name.includes('embed') ? 'EMBEDDING' : 'GENERATION'}
+        </span>
+      ),
+    },
+    {
+      key: 'name',
+      header: 'Model Name',
+      render: (model) => (
+        <span className="font-semibold text-gray-900 dark:text-gray-100">
+          {model.name}
+        </span>
+      ),
+    },
+    {
+      key: 'size',
+      header: 'Size',
+      render: (model) => (
+        <span className="text-gray-600 dark:text-gray-400">
+          {(model.size / 1024 / 1024 / 1024).toFixed(2)} GB
+        </span>
+      ),
+    },
+    {
+      key: 'modified',
+      header: 'Modified',
+      render: (model) => (
+        <span className="text-gray-600 dark:text-gray-400">
+          {model.modified_at
+            ? new Date(model.modified_at).toLocaleDateString()
+            : 'N/A'}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      align: 'right',
+      render: (model) => (
+        <button
+          onClick={() => deleteModel(model.name)}
+          className="inline-flex items-center justify-center p-2 text-gray-400 dark:text-gray-500 hover:text-error-600 dark:hover:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-lg transition-colors"
+          title="Delete model"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </button>
+      ),
+    },
+  ];
 
-      <div className="p-6 pt-0">
+  return (
+    <>
+      <OllamaStatus />
+
+      <div className="mt-6">
         {/* Header */}
         <div className="flex items-center mb-6">
           <div className="flex-shrink-0 w-12 h-12 bg-primary-500 rounded-lg flex items-center justify-center">
@@ -442,62 +515,12 @@ function ModelManager() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {models.map((model) => (
-              <div
-                key={model.name}
-                className="flex items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-md transition-all"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                        model.name.includes('embed')
-                          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                          : 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                      }`}
-                    >
-                      {model.name.includes('embed')
-                        ? 'EMBEDDING'
-                        : 'GENERATION'}
-                    </span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-                      {model.name}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {(model.size / 1024 / 1024 / 1024).toFixed(2)} GB
-                    {model.modified_at && (
-                      <>
-                        {' '}
-                        • Modified{' '}
-                        {new Date(model.modified_at).toLocaleDateString()}
-                      </>
-                    )}
-                  </p>
-                </div>
-                <button
-                  onClick={() => deleteModel(model.name)}
-                  className="ml-4 p-2 text-gray-400 dark:text-gray-500 hover:text-error-600 dark:hover:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-lg transition-colors"
-                  title="Delete model"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
+          <Table
+            columns={modelColumns}
+            data={models}
+            keyExtractor={(model) => model.name}
+            maxHeight="max-h-[500px]"
+          />
         )}
 
         {/* Info Box */}
@@ -521,7 +544,7 @@ function ModelManager() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

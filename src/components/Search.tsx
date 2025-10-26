@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import apiService from '../utils/api';
+import apiService from '@/utils/api';
 import { SearchResponse } from '@/types/api';
 
 const Search = () => {
@@ -51,33 +51,6 @@ const Search = () => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden animate-fade-in">
       <div className="p-6">
-        {/* Header */}
-        <div className="flex items-center mb-6">
-          <div className="flex-shrink-0 w-12 h-12 bg-primary-500 rounded-lg flex items-center justify-center">
-            <svg
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-          <div className="ml-4">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              Semantic Search
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Find relevant content in your documents
-            </p>
-          </div>
-        </div>
-
         {/* Search Form */}
         <form onSubmit={handleSearch} className="mb-6">
           <div className="flex gap-2 mb-4">

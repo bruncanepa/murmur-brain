@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import apiService from '../utils/api';
+import apiService from '../../utils/api';
 import { ChatMessage, Document } from '@/types/api';
 
 function Chat({ chatId, allDocuments, onMessageSent }) {

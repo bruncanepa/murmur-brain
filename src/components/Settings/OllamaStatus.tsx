@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import apiService from '../utils/api';
+import apiService from '@/utils/api';
 
 interface OllamaStatusState {
   running: boolean;
