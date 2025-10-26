@@ -162,7 +162,11 @@ async def send_message(
         if result["success"]:
             return ChatMessageResponse(**result)
         else:
-            raise HTTPException(status_code=500, detail=result.get("error", "Failed to generate response"))
+            # Check if this is a "no documents" error (user-facing, not server error)
+            if result.get("error_type") == "no_documents":
+                raise HTTPException(status_code=404, detail=result.get("error", "No relevant information found"))
+            else:
+                raise HTTPException(status_code=500, detail=result.get("error", "Failed to generate response"))
 
     except HTTPException:
         raise

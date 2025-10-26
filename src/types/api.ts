@@ -46,6 +46,8 @@ export interface Document {
   chunk_count: number;
   created_at: string;
   updated_at: string;
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  upload_date: string;
 }
 
 export interface DocumentsResponse {

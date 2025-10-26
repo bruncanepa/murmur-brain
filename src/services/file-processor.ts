@@ -1,7 +1,5 @@
 import fs from 'fs/promises';
 import path from 'path';
-// import pdf from 'pdf-parse'; // Disabled for browser build
-// import { parse } from 'csv-parse/sync'; // Disabled for browser build
 
 class FileProcessor {
   private supportedTypes: string[];
@@ -9,7 +7,7 @@ class FileProcessor {
   private chunkOverlap: number;
 
   constructor() {
-    this.supportedTypes = ['.pdf', '.csv', '.txt'];
+    this.supportedTypes = ['.pdf', '.txt'];
     this.chunkSize = 1000; // characters per chunk
     this.chunkOverlap = 200; // overlap between chunks
   }
@@ -43,9 +41,6 @@ class FileProcessor {
       switch (ext) {
         case '.pdf':
           text = await this.processPDF(filePath);
-          break;
-        case '.csv':
-          text = await this.processCSV(filePath);
           break;
         case '.txt':
           text = await this.processTXT(filePath);
@@ -135,35 +130,6 @@ class FileProcessor {
     } catch (error) {
       console.error('PDF processing error:', error);
       throw new Error(`Failed to parse PDF: ${error.message}`);
-    }
-  }
-
-  /**
-   * Process CSV file
-   */
-  async processCSV(filePath) {
-    try {
-      const fileContent = await fs.readFile(filePath, 'utf-8');
-
-      // Parse CSV
-      const records = parse(fileContent, {
-        columns: true,
-        skip_empty_lines: true,
-        trim: true,
-      });
-
-      // Convert records to text format
-      // Format: "Column1: value1, Column2: value2, ..."
-      const textLines = records.map((record, index) => {
-        const line = Object.entries(record)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join(', ');
-        return `Row ${index + 1}: ${line}`;
-      });
-
-      return textLines.join('\n');
-    } catch (error) {
-      throw new Error(`Failed to parse CSV: ${error.message}`);
     }
   }
 

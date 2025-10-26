@@ -18,8 +18,8 @@ function App() {
           <Routes>
             <Route path="/documents" element={<UploadPage />} />
             <Route path="/search" element={<SearchPage />} />
-            <Route path="/chats" element={<ChatPage />} />
             <Route path="/chats/:chatId" element={<ChatPage />} />
+            <Route path="/chats" element={<ChatPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/chats" replace />} />
           </Routes>

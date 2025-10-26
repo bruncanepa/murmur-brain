@@ -97,7 +97,7 @@ function FileUpload() {
     for (const file of fileList) {
       // Validate file type
       const fileExt = file.name.split('.').pop().toLowerCase();
-      if (!['pdf', 'csv', 'txt'].includes(fileExt)) {
+      if (!['pdf', 'txt'].includes(fileExt)) {
         addFileResult({
           name: file.name,
           status: 'error',
@@ -212,7 +212,7 @@ function FileUpload() {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-              {doc.file_name || doc.fileName || 'Unknown'}
+              {doc.file_name || 'Unknown'}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">
               {doc.id}
@@ -226,7 +226,7 @@ function FileUpload() {
       header: 'Type',
       render: (doc) => (
         <span className="text-gray-600 dark:text-gray-400">
-          {doc.file_type || doc.fileType || 'N/A'}
+          {doc.file_type || 'N/A'}
         </span>
       ),
     },
@@ -234,7 +234,7 @@ function FileUpload() {
       key: 'size',
       header: 'Size',
       render: (doc) => {
-        const size = doc.file_size || doc.fileSize;
+        const size = doc.file_size;
         const sizeInMB =
           size && !isNaN(size) ? (size / (1024 * 1024)).toFixed(2) : '0.00';
         return (
@@ -249,7 +249,7 @@ function FileUpload() {
       header: 'Chunks',
       render: (doc) => (
         <span className="text-gray-600 dark:text-gray-400">
-          {doc.chunk_count || doc.chunkCount || 0}
+          {doc.chunk_count || 0}
         </span>
       ),
     },
@@ -274,13 +274,16 @@ function FileUpload() {
       key: 'uploaded',
       header: 'Uploaded',
       render: (doc) => {
-        const dateStr = doc.upload_date || doc.uploadedAt;
-        if (!dateStr) return <span className="text-gray-600 dark:text-gray-400">N/A</span>;
+        const dateStr = doc.upload_date;
+        if (!dateStr)
+          return <span className="text-gray-600 dark:text-gray-400">N/A</span>;
         const date = new Date(dateStr.replace(' ', 'T'));
         const formatted = !isNaN(date.getTime())
           ? date.toLocaleDateString()
           : 'Unknown';
-        return <span className="text-gray-600 dark:text-gray-400">{formatted}</span>;
+        return (
+          <span className="text-gray-600 dark:text-gray-400">{formatted}</span>
+        );
       },
     },
     {
@@ -290,10 +293,7 @@ function FileUpload() {
       render: (doc) => (
         <button
           onClick={() =>
-            handleDeleteDocument(
-              doc.id,
-              doc.file_name || doc.fileName || 'this document'
-            )
+            handleDeleteDocument(doc.id, doc.file_name || 'this document')
           }
           className="inline-flex items-center justify-center p-2 text-gray-400 dark:text-gray-500 hover:text-error-600 dark:hover:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 rounded-lg transition-colors"
           title="Delete document"
@@ -336,7 +336,7 @@ function FileUpload() {
             ref={fileInputRef}
             type="file"
             multiple
-            accept=".pdf,.csv,.txt"
+            accept=".pdf,.txt"
             onChange={handleFileSelect}
             className="hidden"
             disabled={uploading}
@@ -391,7 +391,7 @@ function FileUpload() {
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Supported:{' '}
                 <span className="font-semibold text-gray-700 dark:text-gray-300">
-                  PDF, CSV, TXT
+                  PDF, TXT
                 </span>{' '}
                 • Max 50MB per file
               </p>

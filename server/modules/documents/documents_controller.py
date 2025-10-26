@@ -43,7 +43,7 @@ async def process_document(
     service: DocumentService = Depends(get_document_service)
 ):
     """
-    Process an uploaded document (PDF, CSV, TXT).
+    Process an uploaded document (PDF, TXT).
     Extracts text, creates chunks, and stores in database.
     """
     try:

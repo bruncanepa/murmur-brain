@@ -121,7 +121,9 @@ function Chat({ chatId, allDocuments, onMessageSent }) {
         setError(result.error || 'Failed to get response');
       }
     } catch (err) {
-      setError('Error sending message: ' + err.message);
+      // Extract the actual error message from the backend response
+      const errorMessage = err.response?.data?.detail || err.message;
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

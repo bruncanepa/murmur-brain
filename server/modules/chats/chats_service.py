@@ -296,7 +296,8 @@ Please answer based on the context provided above."""
                 return {
                     "success": False,
                     "error": "No relevant information found in linked documents. "
-                            "Please ensure documents are linked to this chat."
+                            "Please ensure documents are linked to this chat.",
+                    "error_type": "no_documents"
                 }
 
             # Build prompt with conversation history
