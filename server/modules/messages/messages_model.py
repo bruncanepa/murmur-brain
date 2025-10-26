@@ -44,28 +44,6 @@ class MessageRepository(BaseRepository):
 
     def __init__(self, db: DatabaseConnection):
         super().__init__(db)
-        self._ensure_tables()
-
-    def _ensure_tables(self):
-        """Ensure messages table exists."""
-        self.db.execute("""
-            CREATE TABLE IF NOT EXISTS messages (
-                id TEXT PRIMARY KEY,
-                chat_id TEXT NOT NULL,
-                role TEXT NOT NULL,
-                content TEXT NOT NULL,
-                sources TEXT,
-                model_used TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE
-            )
-        """)
-
-        self.db.execute("""
-            CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages(chat_id)
-        """)
-
-        self.db.commit()
 
     def create(
         self,

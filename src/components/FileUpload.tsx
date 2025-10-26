@@ -316,23 +316,23 @@ function FileUpload() {
                     return (
                       <div
                         key={fileName}
-                        className="text-left bg-white rounded-lg p-3 border border-gray-200 shadow-sm"
+                        className="text-left bg-white dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600 shadow-sm"
                       >
                         {/* File name and phase */}
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <span className="text-lg">{config.icon}</span>
-                            <span className="text-sm font-semibold text-gray-700 truncate">
+                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">
                               {fileName}
                             </span>
                           </div>
-                          <span className="text-xs font-bold text-gray-900 ml-2">
+                          <span className="text-xs font-bold text-gray-900 dark:text-gray-100 ml-2">
                             {progress}%
                           </span>
                         </div>
 
                         {/* Progress bar */}
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden">
+                        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 mb-2 overflow-hidden">
                           <div
                             className={`${config.color} h-2.5 rounded-full transition-all duration-500 ease-out`}
                             style={{ width: `${progress}%` }}
@@ -342,18 +342,18 @@ function FileUpload() {
                         {/* Phase and message */}
                         <div className="flex items-center justify-between text-xs">
                           <span
-                            className={`font-medium ${phase === 'error' ? 'text-error-600' : 'text-gray-600'}`}
+                            className={`font-medium ${phase === 'error' ? 'text-error-600 dark:text-error-400' : 'text-gray-600 dark:text-gray-300'}`}
                           >
                             {config.label}
                           </span>
-                          <span className="text-gray-500 truncate ml-2 max-w-xs">
+                          <span className="text-gray-500 dark:text-gray-400 truncate ml-2 max-w-xs">
                             {message}
                           </span>
                         </div>
 
                         {/* Optional details (batch info) */}
                         {progressData.details && progressData.details.batch && (
-                          <div className="mt-1 text-xs text-gray-500">
+                          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Batch {progressData.details.batch}/
                             {progressData.details.totalBatches}
                           </div>
@@ -391,8 +391,8 @@ function FileUpload() {
                   key={index}
                   className={`relative p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
                     file.status === 'success'
-                      ? 'bg-success-50 border-success-200'
-                      : 'bg-error-50 border-error-200'
+                      ? 'bg-success-50 dark:bg-success-600/10 border-success-200 dark:border-success-600/30'
+                      : 'bg-error-50 dark:bg-error-600/10 border-error-200 dark:border-error-600/30'
                   }`}
                 >
                   <div className="flex items-start">
@@ -441,17 +441,17 @@ function FileUpload() {
 
                       {file.status === 'success' ? (
                         <div className="mt-1 space-y-1">
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                          <p className="text-xs text-gray-800 dark:text-gray-300">
                             {file.type} • {file.size} MB • {file.chunks} chunks
                           </p>
                           {file.characters && (
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                            <p className="text-xs text-gray-800 dark:text-gray-300">
                               {file.characters.toLocaleString()} characters •{' '}
                               {file.words.toLocaleString()} words
                             </p>
                           )}
                           {file.documentId && (
-                            <p className="text-xs text-gray-500 dark:text-gray-500 font-mono">
+                            <p className="text-xs text-gray-700 dark:text-gray-400 font-mono">
                               ID: {file.documentId.substring(0, 8)}...
                             </p>
                           )}

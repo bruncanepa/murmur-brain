@@ -63,46 +63,6 @@ class DocumentRepository(BaseRepository):
 
     def __init__(self, db: DatabaseConnection):
         super().__init__(db)
-        self._ensure_tables()
-
-    def _ensure_tables(self):
-        """Ensure document and vector tables exist."""
-        # Documents table
-        self.db.execute("""
-            CREATE TABLE IF NOT EXISTS documents (
-                id TEXT PRIMARY KEY,
-                file_name TEXT NOT NULL,
-                file_path TEXT,
-                file_type TEXT NOT NULL,
-                file_size INTEGER,
-                upload_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                chunk_count INTEGER DEFAULT 0,
-                status TEXT DEFAULT 'pending'
-            )
-        """)
-
-        # Vectors table
-        self.db.execute("""
-            CREATE TABLE IF NOT EXISTS vectors (
-                id TEXT PRIMARY KEY,
-                doc_id TEXT NOT NULL,
-                chunk_index INTEGER NOT NULL,
-                chunk_text TEXT NOT NULL,
-                embedding BLOB,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (doc_id) REFERENCES documents(id) ON DELETE CASCADE
-            )
-        """)
-
-        # Indexes
-        self.db.execute("""
-            CREATE INDEX IF NOT EXISTS idx_vectors_doc_id ON vectors(doc_id)
-        """)
-        self.db.execute("""
-            CREATE INDEX IF NOT EXISTS idx_documents_upload_date ON documents(upload_date)
-        """)
-
-        self.db.commit()
 
     def create(self, document: DocumentCreate) -> str:
         """

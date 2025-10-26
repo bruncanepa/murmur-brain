@@ -4,7 +4,6 @@ Document service with business logic.
 Handles document processing, embedding generation, and storage coordination.
 """
 import tempfile
-import shutil
 import asyncio
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -51,10 +50,14 @@ class DocumentService:
         if file_ext not in ['.pdf', '.csv', '.txt']:
             raise ValueError(f"Unsupported file type: {file_ext}")
 
-        # Create temp file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
+        # Read file contents asynchronously
+        file_contents = await file.read()
+
+        # Create temp file and write contents
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext, mode='wb') as temp_file:
             temp_path = temp_file.name
-            shutil.copyfileobj(file.file, temp_file)
+            temp_file.write(file_contents)
+            temp_file.flush()  # Ensure buffer is written to disk
 
         try:
             # Validate file
@@ -118,35 +121,37 @@ class DocumentService:
             Path(temp_path).unlink(missing_ok=True)
             raise e
 
-    async def process_document_stream(
+    async def process_document_stream_bytes(
         self,
-        file: UploadFile,
+        file_contents: bytes,
+        filename: str,
         progress_callback=None
     ):
         """
-        Process document with streaming progress updates.
+        Process document from bytes with streaming progress updates.
 
         Args:
-            file: Uploaded file
+            file_contents: File contents as bytes
+            filename: Original filename
             progress_callback: Async callback for progress updates
 
         Yields:
             Progress update dictionaries
         """
-        file_ext = Path(file.filename).suffix.lower()
-        file_contents = await file.read()
+        file_ext = Path(filename).suffix.lower()
 
         temp_path = None
 
         try:
             # Upload phase (5%)
             if progress_callback:
-                await progress_callback("upload", 5, f"Uploading {file.filename}...")
+                await progress_callback("upload", 5, f"Uploading {filename}...")
 
             # Create temp file
-            with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext, mode='wb') as temp_file:
                 temp_path = temp_file.name
                 temp_file.write(file_contents)
+                temp_file.flush()  # Ensure buffer is written to disk
 
             # Validation phase (10%)
             if progress_callback:
@@ -214,7 +219,7 @@ class DocumentService:
                 await progress_callback("storage", 85, "Saving document to database...")
 
             document = DocumentCreate(
-                file_name=file.filename,
+                file_name=filename,
                 file_path=temp_path,
                 file_type=file_ext,
                 file_size=validation["size"],
@@ -233,7 +238,7 @@ class DocumentService:
             if progress_callback:
                 await progress_callback("complete", 100, "Document processed successfully!", {
                     "documentId": doc_id,
-                    "fileName": file.filename,
+                    "fileName": filename,
                     "fileType": file_ext,
                     "fileSize": validation["size"],
                     "chunkCount": chunk_count,

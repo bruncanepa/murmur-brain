@@ -17,9 +17,9 @@ class DatabaseConnection:
         if db_path is None:
             # Use standard application support directory
             home = Path.home()
-            db_dir = home / "Library" / "Application Support" / "local-brain"
+            db_dir = home / "Library" / "Application Support" / "murmur-brain"
             db_dir.mkdir(parents=True, exist_ok=True)
-            db_path = str(db_dir / "local-brain.db")
+            db_path = str(db_dir / "murmur-brain.db")
 
         self.db_path = db_path
         self.conn = None

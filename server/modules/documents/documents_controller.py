@@ -53,7 +53,9 @@ async def process_document(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        import traceback
         print(f"Error processing document: {e}")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -67,11 +69,17 @@ async def process_document_stream(
     Extracts text, creates chunks, and stores in database while reporting progress.
     """
 
-    async def generate_progress_events():
-        """Generator that yields Server-Sent Events for progress updates."""
+    # Read file contents before creating generator (while file is still open)
+    file_contents = await file.read()
+    filename = file.filename
 
-        async def progress_callback(phase: str, progress: int, message: str, details: dict = None):
-            """Helper to send progress event."""
+    async def generate_progress_events():
+        """Generator that yields Server-Sent Events for progress updates in real-time."""
+        import asyncio
+        from asyncio import Queue
+
+        def format_event(phase: str, progress: int, message: str, details: dict = None):
+            """Format progress data as SSE event."""
             event_data = {
                 "phase": phase,
                 "progress": progress,
@@ -82,22 +90,36 @@ async def process_document_stream(
             return f"data: {json.dumps(event_data)}\n\n"
 
         try:
-            # Process document with streaming progress
-            progress_updates = []
+            # Create queue for real-time progress events
+            queue = Queue()
 
             async def capture_progress(phase, progress, message, details=None):
-                event = await progress_callback(phase, progress, message, details)
-                progress_updates.append(event)
+                """Callback that queues progress events."""
+                await queue.put((phase, progress, message, details))
 
-            await service.process_document_stream(file, progress_callback=capture_progress)
+            # Start document processing in background task
+            task = asyncio.create_task(
+                service.process_document_stream_bytes(file_contents, filename, progress_callback=capture_progress)
+            )
 
-            # Yield all progress updates
-            for update in progress_updates:
-                yield update
+            # Yield progress events in real-time as they arrive
+            while not task.done() or not queue.empty():
+                try:
+                    # Wait for next event with short timeout
+                    phase, progress, message, details = await asyncio.wait_for(queue.get(), timeout=0.1)
+                    yield format_event(phase, progress, message, details)
+                except asyncio.TimeoutError:
+                    # No event yet, check if task is done
+                    continue
+
+            # Ensure task completes and raise any exceptions
+            await task
 
         except Exception as e:
+            import traceback
             error_msg = str(e)
             print(f"Error processing document: {error_msg}")
+            traceback.print_exc()
             yield f"data: {json.dumps({'phase': 'error', 'progress': 0, 'message': error_msg})}\n\n"
 
     return StreamingResponse(
