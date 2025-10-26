@@ -7,12 +7,32 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 
 
+class InstallationInstructions(BaseModel):
+    """Schema for platform-specific installation instructions."""
+    platform: str
+    method: str
+    steps: List[str]
+    download_url: str
+    command: Optional[str] = None
+
+
+class PlatformInfo(BaseModel):
+    """Schema for platform information."""
+    system: str
+    machine: str
+    platform: str
+
+
 class OllamaStatusResponse(BaseModel):
-    """Schema for Ollama status response."""
+    """Schema for enhanced Ollama status response."""
     success: bool
     installed: bool
     running: bool
+    ready: bool
+    action: str  # One of: "ready", "install_required", "start_service"
     message: str
+    installation_instructions: Optional[InstallationInstructions] = None
+    platform: Optional[PlatformInfo] = None
 
 
 class ModelSearchResponse(BaseModel):

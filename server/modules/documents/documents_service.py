@@ -47,8 +47,8 @@ class DocumentService:
         """
         file_ext = Path(file.filename).suffix.lower()
 
-        if file_ext not in ['.pdf', '.csv', '.txt']:
-            raise ValueError(f"Unsupported file type: {file_ext}")
+        if file_ext not in ['.pdf', '.txt']:
+            raise ValueError(f"Unsupported file type: {file_ext}. Only PDF and TXT files are supported.")
 
         # Read file contents asynchronously
         file_contents = await file.read()
@@ -68,8 +68,6 @@ class DocumentService:
             # Process file based on type
             if file_ext == '.pdf':
                 result = self.processor.process_pdf_streaming(temp_path)
-            elif file_ext == '.csv':
-                result = self.processor.process_csv(temp_path)
             elif file_ext == '.txt':
                 result = self.processor.process_text(temp_path)
             else:
@@ -167,8 +165,6 @@ class DocumentService:
 
             if file_ext == '.pdf':
                 result = self.processor.process_pdf_streaming(temp_path)
-            elif file_ext == '.csv':
-                result = self.processor.process_csv(temp_path)
             elif file_ext == '.txt':
                 result = self.processor.process_text(temp_path)
             else:

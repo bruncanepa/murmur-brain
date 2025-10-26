@@ -32,6 +32,14 @@ class Settings(BaseModel):
 
     # File Processing
     max_file_size: int = 50 * 1024 * 1024  # 50MB
+
+    # Token-based chunking settings
+    chunk_size_tokens: int = 1000
+    chunk_overlap_tokens: int = 200
+    use_markdown_chunking: bool = True
+    preserve_document_structure: bool = True
+
+    # Legacy character-based settings (deprecated, kept for backward compatibility)
     chunk_size: int = 1500
     chunk_overlap: int = 300
 

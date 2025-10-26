@@ -1,14 +1,17 @@
 """
 File processor for document chunking.
 
-Handles PDF, CSV, and TXT file processing with intelligent chunking.
+Handles PDF and TXT file processing with intelligent markdown-based chunking.
 """
 import os
 from pathlib import Path
 from typing import Dict, List
-import csv
-from io import StringIO
 from pypdf import PdfReader
+import tiktoken
+from langchain_text_splitters import (
+    MarkdownHeaderTextSplitter,
+    RecursiveCharacterTextSplitter
+)
 from core.config import get_settings
 
 
@@ -17,9 +20,22 @@ class FileProcessor:
 
     def __init__(self, chunk_size: int = None, chunk_overlap: int = None):
         settings = get_settings()
-        self.chunk_size = chunk_size or settings.chunk_size
-        self.chunk_overlap = chunk_overlap or settings.chunk_overlap
+
+        # Use token-based settings if markdown chunking is enabled
+        if settings.use_markdown_chunking:
+            self.chunk_size = chunk_size or settings.chunk_size_tokens
+            self.chunk_overlap = chunk_overlap or settings.chunk_overlap_tokens
+            self.use_markdown = True
+            self.tokenizer = tiktoken.get_encoding("cl100k_base")
+        else:
+            # Fallback to character-based chunking
+            self.chunk_size = chunk_size or settings.chunk_size
+            self.chunk_overlap = chunk_overlap or settings.chunk_overlap
+            self.use_markdown = False
+            self.tokenizer = None
+
         self.max_file_size = settings.max_file_size
+        self.preserve_structure = settings.preserve_document_structure
 
     def validate_file(self, file_path: str) -> Dict:
         """
@@ -48,10 +64,10 @@ class FileProcessor:
                 }
 
             ext = path.suffix.lower()
-            if ext not in ['.pdf', '.csv', '.txt']:
+            if ext not in ['.pdf', '.txt']:
                 return {
                     "valid": False,
-                    "error": f"Unsupported file type: {ext}"
+                    "error": f"Unsupported file type: {ext}. Only PDF and TXT files are supported."
                 }
 
             return {
@@ -63,6 +79,167 @@ class FileProcessor:
         except Exception as e:
             return {"valid": False, "error": str(e)}
 
+    def _count_tokens(self, text: str) -> int:
+        """
+        Count tokens in text using tiktoken.
+
+        Args:
+            text: Text to count tokens in
+
+        Returns:
+            Number of tokens
+        """
+        if not self.tokenizer:
+            # Fallback to character-based estimation
+            return len(text) // 4
+        return len(self.tokenizer.encode(text))
+
+    def _detect_structure_type(self, text: str) -> str:
+        """
+        Detect the structure type of a text chunk.
+
+        Args:
+            text: Text to analyze
+
+        Returns:
+            Structure type: 'paragraph', 'list', 'table', or 'code'
+        """
+        text = text.strip()
+
+        # Check for markdown table
+        if '|' in text and text.count('|') >= 4:
+            return 'table'
+
+        # Check for code block
+        if text.startswith('```') or text.count('    ') > 3:
+            return 'code'
+
+        # Check for list
+        if any(text.startswith(marker) for marker in ['- ', '* ', '+ ', '1. ', '2. ', '3. ']):
+            return 'list'
+
+        return 'paragraph'
+
+    def _convert_text_to_markdown(self, text: str) -> str:
+        """
+        Convert plain text to markdown with structure detection.
+
+        Args:
+            text: Plain text
+
+        Returns:
+            Markdown-formatted text
+        """
+        if not text.strip():
+            return ""
+
+        lines = text.split('\n')
+        markdown_lines = []
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                markdown_lines.append('')
+                continue
+
+            # Detect potential headers (all caps lines or short lines followed by empty line)
+            if len(line) < 60 and line.isupper():
+                markdown_lines.append(f"## {line.title()}")
+            elif line.endswith(':') and len(line) < 60:
+                markdown_lines.append(f"### {line}")
+            else:
+                markdown_lines.append(line)
+
+        return '\n'.join(markdown_lines)
+
+    def _create_chunks_langchain(self, markdown_text: str) -> List[Dict]:
+        """
+        Create chunks using LangChain splitters with markdown awareness.
+
+        Args:
+            markdown_text: Markdown-formatted text
+
+        Returns:
+            List of chunk dictionaries with metadata
+        """
+        if not markdown_text.strip():
+            return []
+
+        chunks = []
+
+        try:
+            # Stage 1: Split by markdown headers if structure preservation is enabled
+            if self.preserve_structure:
+                header_splitter = MarkdownHeaderTextSplitter(
+                    headers_to_split_on=[
+                        ("# ", "h1"),
+                        ("## ", "h2"),
+                        ("### ", "h3"),
+                    ]
+                )
+                header_splits = header_splitter.split_text(markdown_text)
+            else:
+                # Create a simple split object if no header splitting
+                from langchain.schema import Document
+                header_splits = [Document(page_content=markdown_text, metadata={})]
+
+            # Stage 2: Further split by tokens using RecursiveCharacterTextSplitter
+            text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                chunk_size=self.chunk_size,
+                chunk_overlap=self.chunk_overlap,
+                encoding_name="cl100k_base",
+                # Split on markdown-aware separators
+                separators=["\n## ", "\n### ", "\n\n", "\n", ". ", " ", ""]
+            )
+
+            # Process each header section
+            chunk_index = 0
+            for doc in header_splits:
+                # Split the section into token-based chunks
+                section_chunks = text_splitter.split_text(doc.page_content)
+
+                for chunk_text in section_chunks:
+                    if not chunk_text.strip():
+                        continue
+
+                    # Extract headers from metadata
+                    headers = []
+                    for key in ['h1', 'h2', 'h3']:
+                        if key in doc.metadata and doc.metadata[key]:
+                            headers.append(f"{'#' * int(key[1])} {doc.metadata[key]}")
+
+                    chunks.append({
+                        "text": chunk_text.strip(),
+                        "index": chunk_index,
+                        "token_count": self._count_tokens(chunk_text),
+                        "headers": headers,
+                        "structure_type": self._detect_structure_type(chunk_text)
+                    })
+                    chunk_index += 1
+
+        except Exception as e:
+            print(f"Error in LangChain chunking: {e}")
+            # Fallback to simple chunking
+            print("Falling back to simple text splitting...")
+            text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                chunk_size=self.chunk_size,
+                chunk_overlap=self.chunk_overlap,
+                encoding_name="cl100k_base"
+            )
+            simple_chunks = text_splitter.split_text(markdown_text)
+            chunks = [
+                {
+                    "text": chunk.strip(),
+                    "index": i,
+                    "token_count": self._count_tokens(chunk),
+                    "headers": [],
+                    "structure_type": self._detect_structure_type(chunk)
+                }
+                for i, chunk in enumerate(simple_chunks) if chunk.strip()
+            ]
+
+        return chunks
+
     def create_chunks(self, text: str) -> List[Dict]:
         """
         Create overlapping chunks from text with intelligent boundary detection.
@@ -73,6 +250,12 @@ class FileProcessor:
         Returns:
             List of chunk dictionaries
         """
+        # Use markdown-based chunking if enabled
+        if self.use_markdown:
+            markdown_text = self._convert_text_to_markdown(text)
+            return self._create_chunks_langchain(markdown_text)
+
+        # Legacy character-based chunking
         chunks = []
         chunk_index = 0
         start_pos = 0
@@ -129,131 +312,86 @@ class FileProcessor:
 
             print(f"PDF has {total_pages} pages. Processing incrementally...")
 
-            chunks = []
             accumulated_text = ""
-            chunk_index = 0
             total_chars = 0
 
-            # Process pages one by one
+            # Process pages one by one to extract all text
             for page_num in range(total_pages):
                 try:
                     page = reader.pages[page_num]
                     page_text = page.extract_text() or ""
                     total_chars += len(page_text)
-
-                    accumulated_text += page_text + " "
+                    accumulated_text += page_text + "\n"
                 except Exception as page_error:
                     print(f"Warning: Failed to extract page {page_num + 1}: {page_error}")
                     continue
 
-                # When we have enough text, create chunks
-                while len(accumulated_text) >= self.chunk_size:
-                    chunk = accumulated_text[:self.chunk_size]
+                # Log progress
+                if (page_num + 1) % 10 == 0 or page_num + 1 == total_pages:
+                    print(f"Extracted text from {page_num + 1}/{total_pages} pages...")
 
-                    # Try to end at sentence boundary
-                    last_period = chunk.rfind('.')
-                    last_newline = chunk.rfind('\n')
-                    boundary_index = max(last_period, last_newline)
+            # Now process all text with appropriate chunking method
+            if self.use_markdown:
+                # Convert to markdown and use LangChain chunking
+                print("Converting PDF text to markdown and creating intelligent chunks...")
+                markdown_text = self._convert_text_to_markdown(accumulated_text)
+                chunks = self._create_chunks_langchain(markdown_text)
+            else:
+                # Legacy character-based chunking
+                print("Creating character-based chunks...")
+                chunks = []
+                chunk_index = 0
+                start_pos = 0
 
-                    final_chunk = chunk
-                    consumed_length = self.chunk_size
+                while start_pos < len(accumulated_text):
+                    end_pos = start_pos + self.chunk_size
+                    chunk_text = accumulated_text[start_pos:end_pos]
 
-                    if boundary_index > self.chunk_size * 0.5:
-                        final_chunk = chunk[:boundary_index + 1]
-                        consumed_length = boundary_index + 1
+                    # Try to end at sentence boundary if not at end
+                    if end_pos < len(accumulated_text):
+                        last_period = chunk_text.rfind('.')
+                        last_newline = chunk_text.rfind('\n')
+                        boundary_index = max(last_period, last_newline)
+
+                        if boundary_index > self.chunk_size * 0.5:
+                            chunk_text = chunk_text[:boundary_index + 1]
+                            end_pos = start_pos + boundary_index + 1
 
                     chunks.append({
-                        "text": final_chunk.strip(),
+                        "text": chunk_text.strip(),
                         "index": chunk_index,
-                        "startChar": total_chars - len(accumulated_text),
-                        "endChar": total_chars - len(accumulated_text) + consumed_length
+                        "startChar": start_pos,
+                        "endChar": end_pos
                     })
 
                     chunk_index += 1
-
-                    # Keep overlap for next chunk
-                    accumulated_text = accumulated_text[consumed_length - self.chunk_overlap:]
-
-                # Log progress
-                if (page_num + 1) % 10 == 0 or page_num + 1 == total_pages:
-                    print(f"Processed {page_num + 1}/{total_pages} pages, "
-                          f"created {len(chunks)} chunks so far")
-
-            # Process remaining accumulated text
-            if accumulated_text.strip():
-                chunks.append({
-                    "text": accumulated_text.strip(),
-                    "index": chunk_index,
-                    "startChar": total_chars - len(accumulated_text),
-                    "endChar": total_chars
-                })
+                    start_pos = end_pos - self.chunk_overlap
 
             print(f"PDF streaming complete: {total_pages} pages, "
                   f"{total_chars} characters, {len(chunks)} chunks")
 
+            # Calculate total tokens if using token-based chunking
+            total_tokens = sum(chunk.get("token_count", 0) for chunk in chunks) if self.use_markdown else 0
+
+            metadata = {
+                "pageCount": total_pages,
+                "characterCount": total_chars,
+                "wordCount": len(accumulated_text.split()),
+                "chunkCount": len(chunks)
+            }
+
+            if self.use_markdown:
+                metadata["totalTokens"] = total_tokens
+                metadata["avgTokensPerChunk"] = total_tokens // len(chunks) if chunks else 0
+
             return {
                 "chunks": chunks,
-                "metadata": {
-                    "pageCount": total_pages,
-                    "characterCount": total_chars,
-                    "wordCount": len(accumulated_text.split()),
-                    "chunkCount": len(chunks)
-                }
+                "metadata": metadata
             }
 
         except Exception as e:
             print(f"PDF streaming error: {e}")
             raise Exception(f"Failed to stream PDF: {str(e)}")
-
-    def process_csv(self, file_path: str) -> Dict:
-        """
-        Process CSV file and create chunks.
-
-        Args:
-            file_path: Path to CSV file
-
-        Returns:
-            Dict with chunks and metadata
-
-        Raises:
-            Exception: If CSV processing fails
-        """
-        try:
-            print(f"Processing CSV: {Path(file_path).name}")
-
-            with open(file_path, 'r', encoding='utf-8') as f:
-                csv_content = f.read()
-
-            # Parse CSV
-            csv_reader = csv.DictReader(StringIO(csv_content))
-            rows = list(csv_reader)
-
-            # Convert to text format
-            text_parts = []
-            for row in rows:
-                row_text = ", ".join([f"{k}: {v}" for k, v in row.items()])
-                text_parts.append(row_text)
-
-            full_text = "\n".join(text_parts)
-            chunks = self.create_chunks(full_text)
-
-            print(f"CSV processing complete: {len(rows)} rows, "
-                  f"{len(full_text)} characters, {len(chunks)} chunks")
-
-            return {
-                "chunks": chunks,
-                "metadata": {
-                    "rowCount": len(rows),
-                    "columnCount": len(rows[0].keys()) if rows else 0,
-                    "characterCount": len(full_text),
-                    "wordCount": len(full_text.split()),
-                    "chunkCount": len(chunks)
-                }
-            }
-
-        except Exception as e:
-            print(f"CSV processing error: {e}")
-            raise Exception(f"Failed to process CSV: {str(e)}")
 
     def process_text(self, file_path: str) -> Dict:
         """
@@ -274,7 +412,12 @@ class FileProcessor:
             with open(file_path, 'r', encoding='utf-8') as f:
                 text = f.read()
 
-            chunks = self.create_chunks(text)
+            # Use appropriate chunking method
+            if self.use_markdown:
+                markdown_text = self._convert_text_to_markdown(text)
+                chunks = self._create_chunks_langchain(markdown_text)
+            else:
+                chunks = self.create_chunks(text)
 
             # Count lines and words
             lines = text.split('\n')
@@ -283,14 +426,23 @@ class FileProcessor:
             print(f"Text processing complete: {len(lines)} lines, "
                   f"{len(words)} words, {len(chunks)} chunks")
 
+            # Calculate total tokens if using token-based chunking
+            total_tokens = sum(chunk.get("token_count", 0) for chunk in chunks) if self.use_markdown else 0
+
+            metadata = {
+                "lineCount": len(lines),
+                "wordCount": len(words),
+                "characterCount": len(text),
+                "chunkCount": len(chunks)
+            }
+
+            if self.use_markdown:
+                metadata["totalTokens"] = total_tokens
+                metadata["avgTokensPerChunk"] = total_tokens // len(chunks) if chunks else 0
+
             return {
                 "chunks": chunks,
-                "metadata": {
-                    "lineCount": len(lines),
-                    "wordCount": len(words),
-                    "characterCount": len(text),
-                    "chunkCount": len(chunks)
-                }
+                "metadata": metadata
             }
 
         except Exception as e:
