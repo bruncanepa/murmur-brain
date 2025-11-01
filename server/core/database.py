@@ -4,10 +4,10 @@ Database connection and base repository for Local Brain.
 Provides a singleton database connection and base repository class
 for all feature modules to extend.
 """
-import sqlite3
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
+import sqlite3
 
 
 class DatabaseConnection:
@@ -27,11 +27,14 @@ class DatabaseConnection:
 
     def initialize(self):
         """Initialize database connection and enable WAL mode."""
+        # Use standard sqlite3
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
 
         # Enable WAL mode for better concurrency
-        self.conn.execute("PRAGMA journal_mode=WAL")
+        cursor = self.conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.close()
 
         print(f"Database initialized at: {self.db_path}")
 

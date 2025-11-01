@@ -3,6 +3,7 @@ Chat service with RAG functionality.
 
 Handles chat operations and RAG-based response generation.
 """
+import json
 from typing import List, Dict, Optional, Tuple
 from .chats_model import ChatRepository, ChatResponse, ChatWithMessages
 from modules.messages.messages_model import MessageRepository
@@ -105,6 +106,64 @@ class ChatService:
         except ValueError as e:
             raise e
 
+    @staticmethod
+    def calculate_chunk_quality_score(text: str) -> float:
+        """
+        Calculate quality score for a text chunk (0.0 - 1.0).
+
+        Lower scores indicate formula-heavy, low-readability content.
+        Higher scores indicate clean, readable prose.
+
+        Args:
+            text: Text chunk to score
+
+        Returns:
+            Quality score from 0.0 (poor) to 1.0 (excellent)
+        """
+        if not text or len(text) < 50:
+            return 0.0
+
+        # Initialize score
+        score = 1.0
+        text_length = len(text)
+
+        # Count various indicators
+        math_symbols = ['∑', '∫', '∂', '√', '±', '≤', '≥', '≠', '∞', 'exp(', 'log(', 'sin(', 'cos(']
+        brackets = ['[', ']', '(', ')', '{', '}']
+
+        # Penalty 1: Math symbol density
+        math_count = sum(text.count(sym) for sym in math_symbols)
+        math_density = math_count / (text_length / 100)  # Per 100 chars
+        score -= min(0.4, math_density * 0.1)
+
+        # Penalty 2: Bracket density
+        bracket_count = sum(text.count(b) for b in brackets)
+        bracket_density = bracket_count / text_length
+        if bracket_density > 0.15:  # More than 15% brackets
+            score -= min(0.3, bracket_density * 0.5)
+
+        # Penalty 3: Number-heavy content
+        import re
+        numbers = re.findall(r'\b\d+\.?\d*\b', text)
+        words = re.findall(r'\b[a-zA-Z]+\b', text)
+        if len(words) > 0:
+            number_ratio = len(numbers) / (len(words) + len(numbers))
+            if number_ratio > 0.3:  # More than 30% numbers
+                score -= min(0.3, number_ratio * 0.5)
+
+        # Penalty 4: Excessive special formatting (equations)
+        newline_density = text.count('\n') / (text_length / 100)
+        if newline_density > 5:  # Many short lines (equations)
+            score -= min(0.2, newline_density * 0.02)
+
+        # Penalty 5: Very short "words" (variables like x, y, z, i, j, k)
+        short_words = [w for w in words if len(w) <= 2]
+        if len(words) > 0 and len(short_words) / len(words) > 0.4:
+            score -= 0.2
+
+        # Ensure score stays in valid range
+        return max(0.0, min(1.0, score))
+
     def build_rag_context(
         self,
         query: str,
@@ -136,12 +195,29 @@ class ChatService:
 
         doc_ids = [doc["id"] for doc in documents]
 
-        # Retrieve top-10 candidates with higher threshold
+        # Adaptive threshold based on query length
+        # Short queries typically have lower similarity scores
+        query_words = query.split()
+        word_count = len(query_words)
+
+        if word_count <= 3:
+            # Very short queries (e.g., "what is RAG?")
+            adaptive_threshold = 0.25
+        elif word_count <= 6:
+            # Short queries
+            adaptive_threshold = 0.35
+        else:
+            # Normal/long queries
+            adaptive_threshold = 0.45
+
+        print(f"Query word count: {word_count}, using adaptive threshold: {adaptive_threshold}")
+
+        # Retrieve top-10 candidates with adaptive threshold
         try:
             search_result = self.search_service.search(
                 query=query,
                 top_k=10,  # Retrieve more candidates
-                threshold=0.5,  # Higher threshold for better quality
+                threshold=adaptive_threshold,  # Adaptive threshold based on query length
                 doc_ids=doc_ids
             )
         except Exception as e:
@@ -151,8 +227,37 @@ class ChatService:
         if not search_result.success or not search_result.results:
             return "", []
 
-        # Take only top_k after re-ranking
-        top_results = search_result.results[:top_k]
+        # Quality filter and re-rank results
+        scored_results = []
+        for result in search_result.results:
+            quality_score = self.calculate_chunk_quality_score(result.chunk_text)
+            combined_score = result.similarity * quality_score
+            scored_results.append({
+                "result": result,
+                "quality_score": quality_score,
+                "combined_score": combined_score
+            })
+
+        # Filter out low-quality chunks (quality < 0.5)
+        quality_threshold = 0.5
+        filtered_results = [
+            sr for sr in scored_results
+            if sr["quality_score"] >= quality_threshold
+        ]
+
+        # Log filtering stats
+        filtered_count = len(scored_results) - len(filtered_results)
+        if filtered_count > 0:
+            print(f"Quality Filter: Removed {filtered_count} low-quality chunks "
+                  f"(quality < {quality_threshold})")
+
+        # If we filtered too many, relax threshold and use best available
+        if len(filtered_results) < top_k and len(scored_results) > 0:
+            print(f"Relaxing quality threshold to get {top_k} results...")
+            filtered_results = sorted(scored_results, key=lambda x: x["combined_score"], reverse=True)
+
+        # Sort by combined score and take top_k
+        top_results = sorted(filtered_results, key=lambda x: x["combined_score"], reverse=True)[:top_k]
 
         if not top_results:
             return "", []
@@ -161,7 +266,9 @@ class ChatService:
         context_parts = []
         sources = []
 
-        for idx, result in enumerate(top_results, 1):
+        for idx, scored_result in enumerate(top_results, 1):
+            result = scored_result["result"]
+            quality_score = scored_result["quality_score"]
             # Add to context with metadata
             doc_name = result.document["file_name"]
             chunk_text = result.chunk_text
@@ -169,7 +276,7 @@ class ChatService:
 
             # Enhanced context format with metadata
             context_parts.append(
-                f"[Source {idx}: {doc_name} (Relevance: {similarity:.1%})]\n{chunk_text}\n"
+                f"[Source {idx}: {doc_name} (Relevance: {similarity:.1%}, Quality: {quality_score:.1%})]\n{chunk_text}\n"
             )
 
             # Track source for citation
@@ -179,15 +286,17 @@ class ChatService:
                 "file_name": doc_name,
                 "chunk_index": result.chunk_index,
                 "similarity": result.similarity,
+                "quality_score": quality_score,
                 "chunk_text": chunk_text[:200] + "..." if len(chunk_text) > 200 else chunk_text
             })
 
         context_string = "\n".join(context_parts)
 
         # Log retrieval quality
-        avg_similarity = sum(r.similarity for r in top_results) / len(top_results)
+        avg_similarity = sum(sr["result"].similarity for sr in top_results) / len(top_results)
+        avg_quality = sum(sr["quality_score"] for sr in top_results) / len(top_results)
         print(f"RAG Context: Retrieved {len(top_results)} chunks, "
-              f"avg similarity: {avg_similarity:.2%}")
+              f"avg similarity: {avg_similarity:.2%}, avg quality: {avg_quality:.2%}")
 
         return context_string, sources
 
@@ -302,6 +411,20 @@ Please answer based on the context provided above."""
 
             # Build prompt with conversation history
             messages = self.build_prompt(context, user_message, conversation_history)
+
+            # Debug: Log the full prompt being sent to Ollama
+            print("\n" + "="*80)
+            print("=== PROMPT SENT TO OLLAMA ===")
+            print(f"Model: {model}")
+            print(f"Chat ID: {chat_id}")
+            print(f"User Query: {user_message}")
+            print("-" * 80)
+            for idx, msg in enumerate(messages):
+                print(f"\n[MESSAGE {idx+1} - {msg['role'].upper()}]")
+                print(msg['content'])
+                print("-" * 80)
+            print("=== END PROMPT ===")
+            print("="*80 + "\n")
 
             # Generate response using Ollama
             response = self.ollama.generate_chat_response(messages, model)

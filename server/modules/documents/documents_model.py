@@ -61,8 +61,9 @@ class VectorResponse(BaseModel):
 class DocumentRepository(BaseRepository):
     """Repository for document database operations."""
 
-    def __init__(self, db: DatabaseConnection):
+    def __init__(self, db: DatabaseConnection, faiss_manager=None):
         super().__init__(db)
+        self.faiss_manager = faiss_manager
 
     def create(self, document: DocumentCreate) -> str:
         """
@@ -112,7 +113,7 @@ class DocumentRepository(BaseRepository):
 
     def delete(self, doc_id: str) -> bool:
         """
-        Delete a document and its vectors.
+        Delete a document and its vectors (including FAISS index).
 
         Args:
             doc_id: Document ID
@@ -120,9 +121,30 @@ class DocumentRepository(BaseRepository):
         Returns:
             True if deleted, False if not found
         """
-        result = self.db.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
-        self.db.commit()
-        return result.rowcount > 0
+        try:
+            # Get all vector IDs for this document
+            vectors = self.db.fetchall(
+                "SELECT id FROM vectors WHERE doc_id = ?",
+                (doc_id,)
+            )
+            vector_ids = [v["id"] for v in vectors]
+
+            # Remove from FAISS index
+            if vector_ids and self.faiss_manager:
+                try:
+                    self.faiss_manager.remove_vectors(vector_ids)
+                    self.faiss_manager.save()
+                except Exception as e:
+                    print(f"Warning: Could not remove vectors from FAISS index: {e}")
+
+            # Delete document (vectors cascade delete)
+            result = self.db.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
+            self.db.commit()
+            return result.rowcount > 0
+
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def update_status(self, doc_id: str, status: str):
         """Update document processing status."""
@@ -133,7 +155,7 @@ class DocumentRepository(BaseRepository):
 
     def add_vectors(self, doc_id: str, chunks: List[Dict]) -> int:
         """
-        Add vector chunks for a document in a transaction.
+        Add vector chunks for a document and index in FAISS.
 
         Args:
             doc_id: Document ID
@@ -147,19 +169,39 @@ class DocumentRepository(BaseRepository):
         """
         try:
             count = 0
+            vector_ids = []
+            embeddings = []
+
             for chunk in chunks:
                 vector_id = str(uuid.uuid4())
                 embedding_blob = None
                 if chunk.get("embedding"):
                     embedding_blob = json.dumps(chunk["embedding"]).encode()
 
+                # Insert into vectors table
                 self.db.execute("""
                     INSERT INTO vectors (id, doc_id, chunk_index, chunk_text, embedding)
                     VALUES (?, ?, ?, ?, ?)
                 """, (vector_id, doc_id, chunk["index"], chunk["text"], embedding_blob))
+
+                # Collect for FAISS indexing
+                if chunk.get("embedding"):
+                    vector_ids.append(vector_id)
+                    embeddings.append(chunk["embedding"])
+
                 count += 1
 
             self.db.commit()
+
+            # Add to FAISS index
+            if vector_ids and embeddings and self.faiss_manager:
+                try:
+                    self.faiss_manager.add_vectors(vector_ids, embeddings)
+                    self.faiss_manager.save()
+                    print(f"Added {len(vector_ids)} vectors to FAISS index")
+                except Exception as e:
+                    print(f"Warning: Could not add vectors to FAISS index: {e}")
+
             return count
 
         except Exception as e:

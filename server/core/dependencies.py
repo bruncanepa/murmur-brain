@@ -3,10 +3,28 @@ FastAPI dependency injection providers.
 
 Provides dependency functions for use with FastAPI's Depends() pattern.
 """
-from typing import Generator
+from typing import Generator, Optional
 from .database import DatabaseConnection, get_db_connection
 from .ollama_client import OllamaClient, get_ollama_client
 from .config import Settings, get_settings
+from .faiss_manager import FaissIndexManager
+
+# Singleton FAISS manager instance
+_faiss_manager: Optional[FaissIndexManager] = None
+
+
+def get_faiss_manager() -> FaissIndexManager:
+    """
+    Get or create the singleton FAISS manager instance.
+
+    Returns:
+        FaissIndexManager instance
+    """
+    global _faiss_manager
+    if _faiss_manager is None:
+        settings = get_settings()
+        _faiss_manager = FaissIndexManager(embedding_dim=settings.embedding_dimensions)
+    return _faiss_manager
 
 
 def get_db() -> DatabaseConnection:
@@ -43,3 +61,15 @@ def get_config() -> Settings:
             ...
     """
     return get_settings()
+
+
+def get_faiss() -> FaissIndexManager:
+    """
+    Dependency that provides FAISS manager.
+
+    Usage:
+        @app.get("/endpoint")
+        def endpoint(faiss: FaissIndexManager = Depends(get_faiss)):
+            ...
+    """
+    return get_faiss_manager()

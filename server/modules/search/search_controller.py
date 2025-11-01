@@ -7,9 +7,10 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing import Optional
 from .search_model import VectorRepository, SearchResponse
 from .search_service import SearchService
-from core.dependencies import get_db, get_ollama
+from core.dependencies import get_db, get_ollama, get_faiss
 from core.database import DatabaseConnection
 from core.ollama_client import OllamaClient
+from core.faiss_manager import FaissIndexManager
 
 
 router = APIRouter(prefix="/api/search", tags=["search"])
@@ -22,10 +23,11 @@ def get_vector_repository(db: DatabaseConnection = Depends(get_db)) -> VectorRep
 
 def get_search_service(
     vector_repo: VectorRepository = Depends(get_vector_repository),
-    ollama: OllamaClient = Depends(get_ollama)
+    ollama: OllamaClient = Depends(get_ollama),
+    faiss_manager: FaissIndexManager = Depends(get_faiss)
 ) -> SearchService:
     """Dependency that provides search service."""
-    return SearchService(vector_repo, ollama)
+    return SearchService(vector_repo, ollama, faiss_manager)
 
 
 @router.get("", response_model=SearchResponse)

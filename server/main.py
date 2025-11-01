@@ -60,6 +60,18 @@ async def startup_event():
         print("⚠️  Warning: Database migrations failed. App may not work correctly.")
         print("   You can manually run migrations with: python3 server/migrate.py up")
 
+    # Initialize FAISS index from database
+    from core.dependencies import get_faiss_manager
+    print("\n🔍 Initializing FAISS vector search index...")
+    faiss_manager = get_faiss_manager()
+
+    # If no existing index, build from database
+    if faiss_manager.index.ntotal == 0:
+        print("No existing FAISS index found, building from database vectors...")
+        faiss_manager.build_from_database(db)
+    else:
+        print(f"✓ Loaded existing FAISS index with {faiss_manager.index.ntotal} vectors")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():

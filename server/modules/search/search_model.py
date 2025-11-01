@@ -5,6 +5,7 @@ Defines Pydantic schemas for search API and vector repository.
 """
 import json
 import math
+import numpy as np
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 from core.database import BaseRepository, DatabaseConnection
@@ -147,3 +148,4 @@ class VectorRepository(BaseRepository):
 
         # Normalize to 0-1 range
         return max(0.0, min(1.0, similarity))
+

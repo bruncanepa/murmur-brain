@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import apiService from '../../utils/api';
 import { ChatMessage, Document } from '@/types/api';
+import SourceModal from './SourceModal';
+import SourceLink from './SourceLink';
 
 function Chat({ chatId, allDocuments, onMessageSent }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -11,6 +13,7 @@ function Chat({ chatId, allDocuments, onMessageSent }) {
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState('llama3.2');
   const [error, setError] = useState(null);
+  const [selectedSource, setSelectedSource] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Scroll to bottom when messages change
@@ -150,13 +153,6 @@ function Chat({ chatId, allDocuments, onMessageSent }) {
     } catch (err) {
       console.error('Error unlinking document:', err);
     }
-  };
-
-  const getSimilarityBadgeColor = (score) => {
-    if (score >= 0.8) return 'bg-green-100 text-green-800';
-    if (score >= 0.6) return 'bg-blue-100 text-blue-800';
-    if (score >= 0.4) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-gray-100 text-gray-800';
   };
 
   if (!chatId || chatId === '') {
@@ -396,30 +392,19 @@ function Chat({ chatId, allDocuments, onMessageSent }) {
                 {msg.role === 'assistant' &&
                   msg.sources &&
                   msg.sources.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                    <div className="mt-2">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
                         Sources:
                       </p>
-                      {msg.sources.map((source, sourceIdx) => (
-                        <div
-                          key={sourceIdx}
-                          className="p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {source.file_name}
-                            </span>
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${getSimilarityBadgeColor(source.similarity)}`}
-                            >
-                              {(source.similarity * 100).toFixed(0)}%
-                            </span>
-                          </div>
-                          <p className="text-gray-600 dark:text-gray-400 text-xs">
-                            {source.chunk_text}
-                          </p>
-                        </div>
-                      ))}
+                      <div className="flex flex-wrap gap-2">
+                        {msg.sources.map((source, sourceIdx) => (
+                          <SourceLink
+                            key={sourceIdx}
+                            source={source}
+                            onClick={() => setSelectedSource(source)}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -514,6 +499,12 @@ function Chat({ chatId, allDocuments, onMessageSent }) {
           </button>
         </div>
       </div>
+
+      {/* Source Modal */}
+      <SourceModal
+        source={selectedSource}
+        onClose={() => setSelectedSource(null)}
+      />
     </div>
   );
 }

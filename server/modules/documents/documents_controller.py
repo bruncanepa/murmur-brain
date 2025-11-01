@@ -10,17 +10,21 @@ from typing import List
 from .documents_model import DocumentRepository, DocumentResponse
 from .documents_service import DocumentService
 from .documents_processor import FileProcessor
-from core.dependencies import get_db, get_ollama
+from core.dependencies import get_db, get_ollama, get_faiss
 from core.database import DatabaseConnection
 from core.ollama_client import OllamaClient
+from core.faiss_manager import FaissIndexManager
 
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
 
-def get_document_repository(db: DatabaseConnection = Depends(get_db)) -> DocumentRepository:
+def get_document_repository(
+    db: DatabaseConnection = Depends(get_db),
+    faiss_manager: FaissIndexManager = Depends(get_faiss)
+) -> DocumentRepository:
     """Dependency that provides document repository."""
-    return DocumentRepository(db)
+    return DocumentRepository(db, faiss_manager)
 
 
 def get_file_processor() -> FileProcessor:

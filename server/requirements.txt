@@ -10,3 +10,5 @@ pywebview==5.3
 alembic==1.13.1
 langchain-text-splitters==0.0.1
 tiktoken==0.5.2
+faiss-cpu==1.7.4
+numpy==1.26.4

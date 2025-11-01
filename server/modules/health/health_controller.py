@@ -7,8 +7,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Dict, Any
 from modules.documents.documents_model import DocumentRepository
-from core.dependencies import get_db
+from core.dependencies import get_db, get_faiss
 from core.database import DatabaseConnection
+from core.faiss_manager import FaissIndexManager
 
 
 router = APIRouter(prefix="/api", tags=["health"])
@@ -27,9 +28,12 @@ class StatsResponse(BaseModel):
     stats: Dict[str, int]
 
 
-def get_document_repository(db: DatabaseConnection = Depends(get_db)) -> DocumentRepository:
+def get_document_repository(
+    db: DatabaseConnection = Depends(get_db),
+    faiss_manager: FaissIndexManager = Depends(get_faiss)
+) -> DocumentRepository:
     """Dependency that provides document repository."""
-    return DocumentRepository(db)
+    return DocumentRepository(db, faiss_manager)
 
 
 @router.get("/health", response_model=HealthResponse)
