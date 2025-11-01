@@ -275,8 +275,8 @@ function OllamaSetupWizard({
                 </p>
               </div>
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-left">
-                <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2 flex items-center gap-2">
+              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg p-4 text-left">
+                <h4 className="font-medium text-red-900 dark:text-red-200 mb-2 flex items-center gap-2">
                   <svg
                     className="w-5 h-5"
                     fill="currentColor"
@@ -290,7 +290,7 @@ function OllamaSetupWizard({
                   </svg>
                   After installing
                 </h4>
-                <p className="text-sm text-blue-800 dark:text-blue-300">
+                <p className="text-sm text-red-900 dark:text-red-300">
                   {status.action === 'start_service'
                     ? 'Make sure to start the Ollama service. It should start automatically after installation.'
                     : 'Ollama typically starts automatically. If not, launch it from your Applications folder or run `ollama serve` in Terminal.'}

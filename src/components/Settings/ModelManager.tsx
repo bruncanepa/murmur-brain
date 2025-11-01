@@ -382,7 +382,7 @@ function ModelManager() {
                             model.category === 'embedding'
                               ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
                               : model.category === 'vision'
-                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                ? 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-300'
                                 : model.category === 'code'
                                   ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                                   : 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
@@ -418,7 +418,7 @@ function ModelManager() {
                                       ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 cursor-default'
                                       : downloading
                                         ? 'bg-gray-200 dark:bg-gray-600 text-gray-500 cursor-not-allowed'
-                                        : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 cursor-pointer'
+                                        : 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-950/50 cursor-pointer'
                                   }`}
                                   title={
                                     isInstalled

@@ -15,7 +15,7 @@ function FileUpload() {
 
   // Phase display configuration
   const phaseConfig = {
-    upload: { label: 'Uploading', color: 'bg-blue-600', icon: '⬆️' },
+    upload: { label: 'Uploading', color: 'bg-red-700', icon: '⬆️' },
     validation: { label: 'Validating', color: 'bg-indigo-600', icon: '✓' },
     extraction: { label: 'Extracting', color: 'bg-purple-600', icon: '📄' },
     embedding: {

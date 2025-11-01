@@ -116,16 +116,16 @@ function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
           ),
           // Lists
           ul: ({ children }) => (
-            <ul className="list-disc list-inside mb-4 space-y-1 text-gray-800 dark:text-gray-200">
+            <ul className="list-disc list-outside ml-6 mb-4 space-y-1 text-gray-800 dark:text-gray-200">
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-800 dark:text-gray-200">
+            <ol className="list-decimal list-outside ml-6 mb-4 space-y-1 text-gray-800 dark:text-gray-200">
               {children}
             </ol>
           ),
-          li: ({ children }) => <li className="ml-4 leading-7">{children}</li>,
+          li: ({ children }) => <li className="leading-7 pl-2">{children}</li>,
           // Blockquotes
           blockquote: ({ children }) => (
             <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-4 py-2 mb-4 italic text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50">

@@ -11,7 +11,7 @@ const SourceLink: React.FC<SourceLinkProps> = ({ source, onClick }) => {
     if (score >= 0.8)
       return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
     if (score >= 0.6)
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+      return 'bg-red-100 text-red-900 dark:bg-red-950/30 dark:text-red-400';
     if (score >= 0.4)
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
     return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
@@ -20,7 +20,7 @@ const SourceLink: React.FC<SourceLinkProps> = ({ source, onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-2 text-sm text-left hover:underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+      className="inline-flex items-center gap-2 text-sm text-left hover:underline text-red-700 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
     >
       <span className="font-medium truncate max-w-xs">{source.file_name}</span>
       <span
