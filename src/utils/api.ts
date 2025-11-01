@@ -25,16 +25,25 @@ import type {
 // Auto-detect API URL based on environment
 const getApiUrl = (): string => {
   console.log('=== API URL Detection ===');
-  console.log('window.BACKEND_PORT:', typeof window !== 'undefined' ? (window as any).BACKEND_PORT : 'N/A');
+  console.log(
+    'window.BACKEND_PORT:',
+    typeof window !== 'undefined' ? (window as any).BACKEND_PORT : 'N/A'
+  );
   console.log('import.meta.env.DEV:', import.meta.env.DEV);
-  console.log('window.location.origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
+  console.log(
+    'window.location.origin:',
+    typeof window !== 'undefined' ? window.location.origin : 'N/A'
+  );
 
   // Check if running in desktop app (check for BACKEND_PORT injected by desktop.py)
   if (typeof window !== 'undefined' && (window as any).BACKEND_PORT) {
     // Desktop app - API is on dynamic port provided by Python bridge
     const port = (window as any).BACKEND_PORT;
     const url = `http://127.0.0.1:${port}`;
-    console.log('✓ Desktop app detected (BACKEND_PORT exists), using port:', port);
+    console.log(
+      '✓ Desktop app detected (BACKEND_PORT exists), using port:',
+      port
+    );
     console.log('✓ API_URL:', url);
     console.log('========================');
     return url;
@@ -216,7 +225,8 @@ export const apiService = {
   // Ollama Operations
   async getOllamaStatus(): Promise<OllamaStatusResponse> {
     try {
-      const response = await api.get<OllamaStatusResponse>('/api/ollama/status');
+      const response =
+        await api.get<OllamaStatusResponse>('/api/ollama/status');
       return response.data;
     } catch (error: any) {
       console.error('Error getting Ollama status:', error);

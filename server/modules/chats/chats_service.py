@@ -287,7 +287,7 @@ class ChatService:
                 "chunk_index": result.chunk_index,
                 "similarity": result.similarity,
                 "quality_score": quality_score,
-                "chunk_text": chunk_text[:200] + "..." if len(chunk_text) > 200 else chunk_text
+                "chunk_text": chunk_text
             })
 
         context_string = "\n".join(context_parts)

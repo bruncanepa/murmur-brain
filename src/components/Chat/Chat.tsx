@@ -3,6 +3,7 @@ import apiService from '../../utils/api';
 import { ChatMessage, Document } from '@/types/api';
 import SourceModal from './SourceModal';
 import SourceLink from './SourceLink';
+import MarkdownRenderer from './MarkdownRenderer';
 
 function Chat({ chatId, allDocuments, onMessageSent }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -385,7 +386,11 @@ function Chat({ chatId, allDocuments, onMessageSent }) {
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {msg.role === 'user' ? (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  ) : (
+                    <MarkdownRenderer content={msg.content} />
+                  )}
                 </div>
 
                 {/* Sources */}

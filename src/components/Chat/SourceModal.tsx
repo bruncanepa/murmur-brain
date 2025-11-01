@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface Source {
   file_name: string;
@@ -48,7 +49,7 @@ const SourceModal: React.FC<SourceModalProps> = ({ source, onClose }) => {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-3xl max-h-[80vh] bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden"
+        className="relative w-full max-w-3xl bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -91,9 +92,7 @@ const SourceModal: React.FC<SourceModalProps> = ({ source, onClose }) => {
         {/* Content */}
         <div className="overflow-y-auto max-h-[calc(80vh-120px)] px-6 py-4">
           <div className="prose prose-sm dark:prose-invert max-w-none">
-            <pre className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 font-mono text-sm bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-              {source.chunk_text}
-            </pre>
+            <MarkdownRenderer content={source.chunk_text} />
           </div>
         </div>
       </div>
