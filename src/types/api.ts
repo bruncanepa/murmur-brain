@@ -87,6 +87,7 @@ export interface SearchResult {
   };
   file_name: string;
   chunk_index: number;
+  chunk_text?: string;
 }
 
 export interface SearchResponse {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import apiService from '@/utils/api';
 import { SearchResponse } from '@/types/api';
+import MarkdownRenderer from './Chat/MarkdownRenderer';
 
 const Search = () => {
   const [query, setQuery] = useState('');
@@ -266,9 +267,9 @@ const Search = () => {
                     </div>
 
                     {/* Result Content */}
-                    <p className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap text-sm mb-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
-                      {result.chunk_text}
-                    </p>
+                    <div className="text-sm mb-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                      <MarkdownRenderer content={result.chunk_text} />
+                    </div>
 
                     {/* Result Footer */}
                     <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-200 dark:border-gray-600">
