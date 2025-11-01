@@ -184,3 +184,34 @@ async def delete_document(
             raise HTTPException(status_code=404, detail="Document not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/vectors/{vector_id}/content", response_model=dict)
+async def get_vector_content(
+    vector_id: str,
+    doc_repo: DocumentRepository = Depends(get_document_repository)
+):
+    """Get chunk text content for a specific vector ID."""
+    try:
+        vector = doc_repo.get_vector_by_id(vector_id)
+        if not vector:
+            raise HTTPException(status_code=404, detail="Vector not found")
+
+        # Get document info
+        document = doc_repo.get_by_id(vector["doc_id"])
+
+        return {
+            "success": True,
+            "vector_id": vector["id"],
+            "chunk_text": vector["chunk_text"],
+            "chunk_index": vector["chunk_index"],
+            "doc_id": vector["doc_id"],
+            "file_name": document["file_name"] if document else None
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"Error fetching vector content: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

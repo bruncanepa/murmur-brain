@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
+import apiService from '../../utils/api';
 
 interface Source {
+  vector_id: string;
   file_name: string;
   chunk_index: number;
   similarity: number;
-  chunk_text: string;
+  chunk_text?: string; // Optional - fetched on demand
 }
 
 interface SourceModalProps {
@@ -14,6 +16,49 @@ interface SourceModalProps {
 }
 
 const SourceModal: React.FC<SourceModalProps> = ({ source, onClose }) => {
+  const [chunkText, setChunkText] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch chunk text when source changes
+  useEffect(() => {
+    if (!source) {
+      setChunkText('');
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    // If chunk_text already exists (old format), use it
+    if (source.chunk_text) {
+      setChunkText(source.chunk_text);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    // Fetch chunk text from API
+    const fetchChunkText = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await apiService.getVectorContent(source.vector_id);
+        if (result.success) {
+          setChunkText(result.chunk_text);
+        } else {
+          setError(result.error || 'Failed to load content');
+        }
+      } catch (err) {
+        setError('Failed to load content');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChunkText();
+  }, [source]);
+
   // Handle ESC key to close modal
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -49,7 +94,7 @@ const SourceModal: React.FC<SourceModalProps> = ({ source, onClose }) => {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-3xl bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden"
+        className="relative w-full max-w-3xl max-h-[80vh] bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -92,7 +137,24 @@ const SourceModal: React.FC<SourceModalProps> = ({ source, onClose }) => {
         {/* Content */}
         <div className="overflow-y-auto max-h-[calc(80vh-120px)] px-6 py-4">
           <div className="prose prose-sm dark:prose-invert max-w-none">
-            <MarkdownRenderer content={source.chunk_text} />
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <span className="ml-3 text-gray-600 dark:text-gray-400">
+                  Loading content...
+                </span>
+              </div>
+            )}
+
+            {error && (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
+                {error}
+              </div>
+            )}
+
+            {!loading && !error && chunkText && (
+              <MarkdownRenderer content={chunkText} />
+            )}
           </div>
         </div>
       </div>

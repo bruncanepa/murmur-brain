@@ -219,6 +219,16 @@ class DocumentRepository(BaseRepository):
 
         return self._dicts_from_rows(rows)
 
+    def get_vector_by_id(self, vector_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific vector by ID."""
+        row = self.db.fetchone("""
+            SELECT id, doc_id, chunk_index, chunk_text, created_at
+            FROM vectors
+            WHERE id = ?
+        """, (vector_id,))
+
+        return self._dict_from_row(row)
+
     def get_stats(self) -> Dict[str, int]:
         """Get document and vector statistics."""
         doc_count = self.db.fetchone("SELECT COUNT(*) as count FROM documents")["count"]

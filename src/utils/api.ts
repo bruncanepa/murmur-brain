@@ -434,6 +434,34 @@ export const apiService = {
     const response = await api.patch(`/api/chats/${chatId}/title`, { title });
     return response.data;
   },
+
+  // Get vector content by ID
+  async getVectorContent(vectorId: string): Promise<{
+    success: boolean;
+    vector_id: string;
+    chunk_text: string;
+    chunk_index: number;
+    doc_id: string;
+    file_name: string;
+    error?: string;
+  }> {
+    try {
+      const response = await api.get(
+        `/api/documents/vectors/${vectorId}/content`
+      );
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.detail || error.message,
+        vector_id: vectorId,
+        chunk_text: '',
+        chunk_index: 0,
+        doc_id: '',
+        file_name: '',
+      };
+    }
+  },
 };
 
 export default apiService;

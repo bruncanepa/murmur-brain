@@ -279,15 +279,14 @@ class ChatService:
                 f"[Source {idx}: {doc_name} (Relevance: {similarity:.1%}, Quality: {quality_score:.1%})]\n{chunk_text}\n"
             )
 
-            # Track source for citation
+            # Track source for citation (without chunk_text - fetched on demand)
             sources.append({
-                "doc_id": result.doc_id,
                 "vector_id": result.vector_id,
+                "doc_id": result.doc_id,
                 "file_name": doc_name,
                 "chunk_index": result.chunk_index,
                 "similarity": result.similarity,
-                "quality_score": quality_score,
-                "chunk_text": chunk_text
+                "quality_score": quality_score
             })
 
         context_string = "\n".join(context_parts)
