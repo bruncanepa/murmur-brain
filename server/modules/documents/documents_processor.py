@@ -6,7 +6,7 @@ Handles PDF and TXT file processing with intelligent markdown-based chunking.
 import os
 from pathlib import Path
 from typing import Dict, List
-from pypdf import PdfReader
+import pymupdf4llm
 import tiktoken
 from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
@@ -292,8 +292,9 @@ class FileProcessor:
 
     def process_pdf_streaming(self, file_path: str) -> Dict:
         """
-        Process PDF in streaming mode to avoid memory issues.
-        Creates chunks incrementally as pages are processed.
+        Process PDF using pymupdf4llm for better extraction quality.
+        Extracts PDF as clean Markdown with proper formatting for equations,
+        tables, and document structure.
 
         Args:
             file_path: Path to PDF file
@@ -305,36 +306,28 @@ class FileProcessor:
             Exception: If PDF processing fails
         """
         try:
-            print(f"Processing PDF in streaming mode: {Path(file_path).name}")
+            print(f"Processing PDF with pymupdf4llm: {Path(file_path).name}")
 
-            reader = PdfReader(file_path, strict=False)
-            total_pages = len(reader.pages)
+            # Use pymupdf4llm to extract PDF as clean Markdown
+            # This provides much better handling of:
+            # - Mathematical equations (LaTeX-style formatting)
+            # - Tables and structured data
+            # - Multi-column layouts
+            # - Document structure (headers, sections)
+            markdown_text = pymupdf4llm.to_markdown(file_path)
 
-            print(f"PDF has {total_pages} pages. Processing incrementally...")
+            print(f"Extracted {len(markdown_text)} characters of markdown text")
 
-            accumulated_text = ""
-            total_chars = 0
+            # Count pages from the original PDF for metadata
+            import fitz  # PyMuPDF
+            doc = fitz.open(file_path)
+            total_pages = len(doc)
+            doc.close()
 
-            # Process pages one by one to extract all text
-            for page_num in range(total_pages):
-                try:
-                    page = reader.pages[page_num]
-                    page_text = page.extract_text() or ""
-                    total_chars += len(page_text)
-                    accumulated_text += page_text + "\n"
-                except Exception as page_error:
-                    print(f"Warning: Failed to extract page {page_num + 1}: {page_error}")
-                    continue
-
-                # Log progress
-                if (page_num + 1) % 10 == 0 or page_num + 1 == total_pages:
-                    print(f"Extracted text from {page_num + 1}/{total_pages} pages...")
-
-            # Now process all text with appropriate chunking method
+            # Now process markdown text with appropriate chunking method
             if self.use_markdown:
-                # Convert to markdown and use LangChain chunking
-                print("Converting PDF text to markdown and creating intelligent chunks...")
-                markdown_text = self._convert_text_to_markdown(accumulated_text)
+                # Use LangChain chunking directly on the markdown
+                print("Creating intelligent markdown-aware chunks...")
                 chunks = self._create_chunks_langchain(markdown_text)
             else:
                 # Legacy character-based chunking
@@ -343,12 +336,12 @@ class FileProcessor:
                 chunk_index = 0
                 start_pos = 0
 
-                while start_pos < len(accumulated_text):
+                while start_pos < len(markdown_text):
                     end_pos = start_pos + self.chunk_size
-                    chunk_text = accumulated_text[start_pos:end_pos]
+                    chunk_text = markdown_text[start_pos:end_pos]
 
                     # Try to end at sentence boundary if not at end
-                    if end_pos < len(accumulated_text):
+                    if end_pos < len(markdown_text):
                         last_period = chunk_text.rfind('.')
                         last_newline = chunk_text.rfind('\n')
                         boundary_index = max(last_period, last_newline)
@@ -367,16 +360,16 @@ class FileProcessor:
                     chunk_index += 1
                     start_pos = end_pos - self.chunk_overlap
 
-            print(f"PDF streaming complete: {total_pages} pages, "
-                  f"{total_chars} characters, {len(chunks)} chunks")
+            print(f"PDF processing complete: {total_pages} pages, "
+                  f"{len(markdown_text)} characters, {len(chunks)} chunks")
 
             # Calculate total tokens if using token-based chunking
             total_tokens = sum(chunk.get("token_count", 0) for chunk in chunks) if self.use_markdown else 0
 
             metadata = {
                 "pageCount": total_pages,
-                "characterCount": total_chars,
-                "wordCount": len(accumulated_text.split()),
+                "characterCount": len(markdown_text),
+                "wordCount": len(markdown_text.split()),
                 "chunkCount": len(chunks)
             }
 
@@ -390,8 +383,8 @@ class FileProcessor:
             }
 
         except Exception as e:
-            print(f"PDF streaming error: {e}")
-            raise Exception(f"Failed to stream PDF: {str(e)}")
+            print(f"PDF processing error: {e}")
+            raise Exception(f"Failed to process PDF: {str(e)}")
 
     def process_text(self, file_path: str) -> Dict:
         """
